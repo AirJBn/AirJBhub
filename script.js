@@ -122,20 +122,62 @@ class AirJBDashboard {
         const email = document.getElementById('admin-email').value.trim();
         const password = document.getElementById('admin-password').value;
         
-        // Obfuscated admin credentials
-        const adminEmail = atob('bm9haHdlbGxkQGdtYWlsLmNvbQ==');
-        const adminPass = atob('QWlyamJodWJAeW91cnN0cnVseTE5');
-        
-        if (email === adminEmail && password === adminPass) {
-            this.isAuthenticated = true;
-            const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000);
-            localStorage.setItem('airjb-admin-auth', 'authenticated');
-            localStorage.setItem('airjb-admin-auth-expiry', expiryTime.toString());
+        if (this.useMockData) {
+            // Fallback for when Firebase is not available
+            const adminEmail = atob('bm9haHdlbGxkQGdtYWlsLmNvbQ==');
+            const adminPass = atob('QWlyamJodWJAeW91cnN0cnVseTE5');
             
-            // Redirect to the main hub
-            window.location.href = 'airjb-hub.html';
-        } else {
-            this.showError('Invalid credentials. Access denied.');
+            if (email === adminEmail && password === adminPass) {
+                this.isAuthenticated = true;
+                const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000);
+                localStorage.setItem('airjb-admin-auth', 'authenticated');
+                localStorage.setItem('airjb-admin-auth-expiry', expiryTime.toString());
+                window.location.href = 'airjb-hub.html';
+            } else {
+                this.showError('Invalid credentials. Access denied.');
+            }
+            return;
+        }
+
+        try {
+            // Sign in with Firebase Auth
+            const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            
+            // Check if user is an admin
+            const isAdmin = await this.verifyAdminUser(user);
+            if (isAdmin) {
+                this.currentUser = user;
+                this.isAuthenticated = true;
+                
+                // Store session info
+                const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000);
+                localStorage.setItem('airjb-admin-auth', 'authenticated');
+                localStorage.setItem('airjb-admin-auth-expiry', expiryTime.toString());
+                localStorage.setItem('airjb-admin-uid', user.uid);
+                
+                // Redirect to the main hub
+                window.location.href = 'airjb-hub.html';
+            } else {
+                // User is authenticated but not admin
+                await this.auth.signOut();
+                this.showError('Access denied. Admin privileges required.');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            let errorMessage = 'Login failed. Please check your credentials.';
+            
+            if (error.code === 'auth/user-not-found') {
+                errorMessage = 'No admin account found with this email address.';
+            } else if (error.code === 'auth/wrong-password') {
+                errorMessage = 'Incorrect password. Please try again.';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Invalid email address format.';
+            } else if (error.code === 'auth/too-many-requests') {
+                errorMessage = 'Too many failed login attempts. Please try again later.';
+            }
+            
+            this.showError(errorMessage);
         }
     }
 
@@ -143,10 +185,22 @@ class AirJBDashboard {
     async handleLogout(e) {
         e.preventDefault();
         
+        try {
+            if (!this.useMockData && this.auth.currentUser) {
+                await this.auth.signOut();
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+        
         this.isAuthenticated = false;
+        this.currentUser = null;
         localStorage.removeItem('airjb-admin-auth');
         localStorage.removeItem('airjb-admin-auth-expiry');
-        this.showLogin();
+        localStorage.removeItem('airjb-admin-uid');
+        
+        // Redirect to login page
+        window.location.href = 'index.html';
     }
 
 

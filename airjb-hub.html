@@ -168,6 +168,319 @@
             flex-wrap: wrap;
         }
         
+        /* Dialog Styles */
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: dialogFadeIn 0.2s ease-out;
+        }
+
+        .dialog-box {
+            background: #2d2d2d;
+            border-radius: 8px;
+            border: 1px solid #404040;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            min-width: 400px;
+            max-width: 500px;
+            animation: dialogSlideIn 0.3s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .dialog-header {
+            padding: 20px 24px 16px 24px;
+            border-bottom: 1px solid #404040;
+        }
+
+        .dialog-header h3 {
+            font-size: 18px;
+            font-weight: 300;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .dialog-content {
+            padding: 20px 24px;
+        }
+
+        .dialog-content p {
+            color: #ffffff;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .dialog-actions {
+            padding: 16px 24px 20px 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .dialog-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 200;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            min-width: 80px;
+            font-family: inherit;
+        }
+
+        .dialog-btn-secondary {
+            background: transparent;
+            border-color: #404040;
+            color: #ffffff;
+        }
+
+        .dialog-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #505050;
+        }
+
+        .dialog-btn-primary {
+            background: #00ff88;
+            color: #000000;
+            border-color: #00ff88;
+        }
+
+        .dialog-btn-primary:hover {
+            background: #00cc6b;
+            border-color: #00cc6b;
+        }
+
+        /* Support Center Styles */
+        .support-tabs {
+            display: flex;
+            border-bottom: 1px solid #404040;
+            margin-bottom: 20px;
+        }
+
+        .support-tab {
+            flex: 1;
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            color: #888888;
+            font-size: 14px;
+            font-weight: 200;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            font-family: inherit;
+        }
+
+        .support-tab.active {
+            color: #00ff88;
+            border-bottom-color: #00ff88;
+        }
+
+        .support-tab:hover {
+            color: #ffffff;
+        }
+
+        .support-tab-content {
+            display: none;
+        }
+
+        .support-tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #ffffff;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+
+        .user-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #404040;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info h4 {
+            color: #ffffff;
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .user-info p {
+            color: #888888;
+            margin: 0;
+            font-size: 12px;
+        }
+
+        .user-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .user-status.online {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .user-status.offline {
+            background: rgba(158, 158, 158, 0.2);
+            color: #9e9e9e;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+        }
+
+        .loading-message {
+            text-align: center;
+            color: #888888;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .tickets-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .ticket-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid #404040;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .ticket-item:hover {
+            border-color: #00ff88;
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .ticket-id {
+            font-family: monospace;
+            background: #404040;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #00ff88;
+            font-size: 12px;
+        }
+
+        .ticket-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .ticket-status.open {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .ticket-status.in_progress {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196f3;
+        }
+
+        .ticket-status.resolved {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        .ticket-status.closed {
+            background: rgba(158, 158, 158, 0.2);
+            color: #9e9e9e;
+        }
+
+        .ticket-message {
+            color: #cccccc;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .ticket-date {
+            color: #888888;
+            font-size: 11px;
+        }
+
+        @keyframes dialogFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes dialogSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         @media (max-width: 768px) {
             .hub-header {
                 flex-direction: column;
@@ -185,6 +498,16 @@
             
             .quick-buttons {
                 flex-direction: column;
+            }
+
+            .dialog-box {
+                min-width: 90vw;
+                max-width: 90vw;
+            }
+
+            .stat-row {
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
@@ -259,10 +582,9 @@
             <!-- Flight Data -->
             <div class="hub-card">
                 <h3>Flight Data</h3>
-                <p>Monitor real-time flight tracking, routes, and pilot activity across the network.</p>
+                <p>Monitor real-time flight tracking and pilot activity across the network.</p>
                 <div class="hub-actions">
                     <button class="hub-btn" onclick="viewFlights()">Live Flights</button>
-                    <button class="hub-btn secondary" onclick="flightHistory()">History</button>
                 </div>
             </div>
 
@@ -296,14 +618,84 @@
                 </div>
             </div>
 
-            <!-- Content Management -->
-            <div class="hub-card">
-                <h3>Content Management</h3>
-                <p>Manage app content, announcements, and user communications.</p>
-                <div class="hub-actions">
-                    <button class="hub-btn" onclick="manageContent()">Manage Content</button>
-                    <button class="hub-btn secondary" onclick="sendAnnouncement()">Announce</button>
+        </div>
+    </div>
+
+    <!-- Custom Dialog System -->
+    <div id="custom-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-box">
+            <div class="dialog-header">
+                <h3 id="dialog-title">Dialog</h3>
+            </div>
+            <div class="dialog-content">
+                <p id="dialog-message">Message</p>
+            </div>
+            <div class="dialog-actions">
+                <button id="dialog-cancel" class="dialog-btn dialog-btn-secondary" style="display: none;">Cancel</button>
+                <button id="dialog-ok" class="dialog-btn dialog-btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Modal -->
+    <div id="user-management-modal" class="dialog-overlay" style="display: none;">
+        <div class="dialog-box" style="min-width: 800px; max-width: 90vw;">
+            <div class="dialog-header">
+                <h3>User Management</h3>
+            </div>
+            <div class="dialog-content">
+                <div class="user-stats">
+                    <div class="stat-row">
+                        <span>Total Users: <strong id="modal-total-users">--</strong></span>
+                        <span>Online: <strong id="modal-online-users">--</strong></span>
+                    </div>
                 </div>
+                <div class="user-list" id="user-list">
+                    <div class="loading-message">Loading users...</div>
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <button id="close-user-management" class="dialog-btn dialog-btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Center Modal -->
+    <div id="support-center-modal" class="dialog-overlay" style="display: none;">
+        <div class="dialog-box" style="min-width: 900px; max-width: 95vw;">
+            <div class="dialog-header">
+                <h3>Support Center</h3>
+            </div>
+            <div class="dialog-content">
+                <div class="support-tabs">
+                    <button class="support-tab active" id="tickets-tab">Support Tickets</button>
+                    <button class="support-tab" id="create-ticket-tab">Create Ticket</button>
+                </div>
+                <div class="support-tab-content active" id="tickets-content">
+                    <div class="tickets-list" id="tickets-list">
+                        <div class="loading-message">Loading tickets...</div>
+                    </div>
+                </div>
+                <div class="support-tab-content" id="create-ticket-content">
+                    <form id="create-ticket-form">
+                        <div class="form-group">
+                            <label>User Email:</label>
+                            <input type="email" id="ticket-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Subject:</label>
+                            <input type="text" id="ticket-subject" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Message:</label>
+                            <textarea id="ticket-message" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="dialog-btn dialog-btn-primary">Create Ticket</button>
+                    </form>
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <button id="close-support-center" class="dialog-btn dialog-btn-secondary">Close</button>
             </div>
         </div>
     </div>
@@ -327,7 +719,51 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const database = firebase.database();
+
+        // Check authentication on page load
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                // No user signed in, redirect to login
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                // Check if user is admin
+                const adminSnapshot = await database.ref(`admins/${user.uid}`).once('value');
+                
+                if (!adminSnapshot.exists()) {
+                    // User exists but is not an admin
+                    await auth.signOut();
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const adminData = adminSnapshot.val();
+                if (!adminData.active) {
+                    // Admin account is deactivated
+                    await auth.signOut();
+                    alert('Admin account is deactivated. Contact system administrator.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                // User is authenticated admin, update UI
+                document.querySelector('.hub-user span').textContent = `Welcome, ${adminData.email}`;
+                
+                // Load dashboard data
+                loadDashboardData();
+                
+            } catch (error) {
+                console.error('Error verifying admin:', error);
+                await auth.signOut();
+                alert('Authentication error. Please try logging in again.');
+                window.location.href = 'index.html';
+            }
+        });
 
         // Load dashboard data
         async function loadDashboardData() {
@@ -360,54 +796,170 @@
             }
         }
 
+        // Custom Dialog Functions
+        function showDialog(title, message, showCancel = false) {
+            return new Promise((resolve) => {
+                const dialog = document.getElementById('custom-dialog');
+                const titleElement = document.getElementById('dialog-title');
+                const messageElement = document.getElementById('dialog-message');
+                const okButton = document.getElementById('dialog-ok');
+                const cancelButton = document.getElementById('dialog-cancel');
+                
+                titleElement.textContent = title;
+                messageElement.textContent = message;
+                
+                if (showCancel) {
+                    cancelButton.style.display = 'inline-block';
+                } else {
+                    cancelButton.style.display = 'none';
+                }
+                
+                dialog.style.display = 'flex';
+                okButton.focus();
+                
+                const handleOk = () => {
+                    dialog.style.display = 'none';
+                    cleanup();
+                    resolve(true);
+                };
+                
+                const handleCancel = () => {
+                    dialog.style.display = 'none';
+                    cleanup();
+                    resolve(false);
+                };
+                
+                const handleEscape = (e) => {
+                    if (e.key === 'Escape') {
+                        handleCancel();
+                    }
+                };
+                
+                const cleanup = () => {
+                    okButton.removeEventListener('click', handleOk);
+                    cancelButton.removeEventListener('click', handleCancel);
+                    document.removeEventListener('keydown', handleEscape);
+                };
+                
+                okButton.addEventListener('click', handleOk);
+                cancelButton.addEventListener('click', handleCancel);
+                document.addEventListener('keydown', handleEscape);
+            });
+        }
+
         // Management functions
-        function viewUsers() {
-            alert('User Management - Coming Soon');
+        async function viewUsers() {
+            const modal = document.getElementById('user-management-modal');
+            const userList = document.getElementById('user-list');
+            const totalUsersSpan = document.getElementById('modal-total-users');
+            const onlineUsersSpan = document.getElementById('modal-online-users');
+            
+            modal.style.display = 'flex';
+            
+            try {
+                const pilotsSnapshot = await database.ref('pilots').once('value');
+                const pilotsData = pilotsSnapshot.val() || {};
+                const pilots = Object.entries(pilotsData);
+                
+                totalUsersSpan.textContent = pilots.length;
+                const onlineCount = pilots.filter(([_, pilot]) => pilot.isOnline).length;
+                onlineUsersSpan.textContent = onlineCount;
+                
+                if (pilots.length === 0) {
+                    userList.innerHTML = '<div class="loading-message">No users found</div>';
+                } else {
+                    userList.innerHTML = pilots.map(([uid, pilot]) => `
+                        <div class="user-item">
+                            <div class="user-info">
+                                <h4>${pilot.callsign || 'Unknown'}</h4>
+                                <p>${pilot.email || 'No email'}</p>
+                                <p>Flight Hours: ${pilot.totalFlightHours || 0}</p>
+                                <p>Member since: ${pilot.createdAt ? new Date(pilot.createdAt).toLocaleDateString() : 'Unknown'}</p>
+                            </div>
+                            <div class="user-status ${pilot.isOnline ? 'online' : 'offline'}">
+                                ${pilot.isOnline ? 'Online' : 'Offline'}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                userList.innerHTML = '<div class="loading-message">Error loading users</div>';
+            }
         }
 
         function userAnalytics() {
-            alert('User Analytics - Coming Soon');
+            showDialog('User Analytics', 'Detailed user analytics and engagement metrics are coming soon!');
         }
 
         function viewFlights() {
-            alert('Live Flight Tracking - Coming Soon');
+            showDialog('Live Flight Tracking', 'Real-time flight tracking interface is coming soon!');
         }
 
-        function flightHistory() {
-            alert('Flight History - Coming Soon');
-        }
-
-        function viewTickets() {
-            alert('Support Tickets - Coming Soon');
+        async function viewTickets() {
+            const modal = document.getElementById('support-center-modal');
+            const ticketsList = document.getElementById('tickets-list');
+            
+            // Switch to tickets tab
+            document.getElementById('tickets-tab').click();
+            modal.style.display = 'flex';
+            
+            try {
+                const ticketsSnapshot = await database.ref('support_tickets').once('value');
+                const ticketsData = ticketsSnapshot.val() || {};
+                const tickets = Object.entries(ticketsData);
+                
+                if (tickets.length === 0) {
+                    ticketsList.innerHTML = '<div class="loading-message">No support tickets found</div>';
+                } else {
+                    ticketsList.innerHTML = tickets.map(([ticketId, ticket]) => `
+                        <div class="ticket-item" onclick="openTicketDetails('${ticketId}')">
+                            <div class="ticket-header">
+                                <span class="ticket-id">#${ticketId.slice(-8)}</span>
+                                <span class="ticket-status ${ticket.status || 'open'}">${ticket.status || 'open'}</span>
+                            </div>
+                            <div class="ticket-message">${ticket.message || 'No message'}</div>
+                            <div class="ticket-date">
+                                From: ${ticket.userEmail || 'Unknown'} • 
+                                ${ticket.timestamp ? new Date(ticket.timestamp).toLocaleString() : 'Unknown date'}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading tickets:', error);
+                ticketsList.innerHTML = '<div class="loading-message">Error loading tickets</div>';
+            }
         }
 
         function createTicket() {
-            alert('Create Ticket - Coming Soon');
+            const modal = document.getElementById('support-center-modal');
+            
+            // Switch to create ticket tab
+            document.getElementById('create-ticket-tab').click();
+            modal.style.display = 'flex';
         }
 
         function viewAnalytics() {
-            alert('App Analytics - Coming Soon');
+            showDialog('App Analytics', 'Comprehensive app analytics dashboard is coming soon!');
         }
 
         function generateReport() {
-            alert('Generate Report - Coming Soon');
+            showDialog('Generate Report', 'Report generation functionality is coming soon!');
         }
 
         function systemSettings() {
-            alert('System Settings - Coming Soon');
+            showDialog('System Settings', 'System configuration panel is coming soon!');
         }
 
         function backupData() {
-            alert('Data Backup - Coming Soon');
+            showDialog('Data Backup', 'Data backup and export functionality is coming soon!');
         }
 
-        function manageContent() {
-            alert('Content Management - Coming Soon');
+        function openTicketDetails(ticketId) {
+            showDialog('Ticket Details', `Detailed ticket view for #${ticketId.slice(-8)} is coming soon!`);
         }
 
-        function sendAnnouncement() {
-            alert('Send Announcement - Coming Soon');
-        }
 
         // Quick action functions
         function refreshData() {
@@ -416,15 +968,15 @@
         }
 
         function exportData() {
-            alert('Export Data - Coming Soon');
+            showDialog('Export Data', 'Data export functionality is coming soon!');
         }
 
         function viewLogs() {
-            alert('System Logs - Coming Soon');
+            showDialog('System Logs', 'System logs viewer is coming soon!');
         }
 
         function systemStatus() {
-            alert('System Status - Coming Soon');
+            showDialog('System Status', 'System status monitoring is coming soon!');
         }
 
         function showNotification(message) {
@@ -451,11 +1003,86 @@
         }
 
         // Logout functionality
-        document.getElementById('logout-btn').addEventListener('click', (e) => {
+        document.getElementById('logout-btn').addEventListener('click', async (e) => {
             e.preventDefault();
-            localStorage.removeItem('airjb-admin-auth');
-            localStorage.removeItem('airjb-admin-auth-expiry');
-            window.location.href = 'index.html';
+            
+            try {
+                await auth.signOut();
+                localStorage.removeItem('airjb-admin-auth');
+                localStorage.removeItem('airjb-admin-auth-expiry');
+                localStorage.removeItem('airjb-admin-uid');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Force redirect even if logout fails
+                window.location.href = 'index.html';
+            }
+        });
+
+        // Modal event handlers
+        document.getElementById('close-user-management').addEventListener('click', () => {
+            document.getElementById('user-management-modal').style.display = 'none';
+        });
+
+        document.getElementById('close-support-center').addEventListener('click', () => {
+            document.getElementById('support-center-modal').style.display = 'none';
+        });
+
+        // Support center tab switching
+        document.getElementById('tickets-tab').addEventListener('click', () => {
+            document.getElementById('tickets-tab').classList.add('active');
+            document.getElementById('create-ticket-tab').classList.remove('active');
+            document.getElementById('tickets-content').classList.add('active');
+            document.getElementById('create-ticket-content').classList.remove('active');
+        });
+
+        document.getElementById('create-ticket-tab').addEventListener('click', () => {
+            document.getElementById('create-ticket-tab').classList.add('active');
+            document.getElementById('tickets-tab').classList.remove('active');
+            document.getElementById('create-ticket-content').classList.add('active');
+            document.getElementById('tickets-content').classList.remove('active');
+        });
+
+        // Create ticket form handler
+        document.getElementById('create-ticket-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('ticket-email').value;
+            const subject = document.getElementById('ticket-subject').value;
+            const message = document.getElementById('ticket-message').value;
+            
+            try {
+                const ticketId = 'ticket_' + Date.now();
+                const ticketData = {
+                    userEmail: email,
+                    subject: subject,
+                    message: message,
+                    status: 'open',
+                    timestamp: new Date().toISOString(),
+                    createdBy: 'admin',
+                    replies: []
+                };
+                
+                await database.ref('support_tickets/' + ticketId).set(ticketData);
+                
+                showNotification('Support ticket created successfully!');
+                document.getElementById('create-ticket-form').reset();
+                
+                // Switch back to tickets tab
+                document.getElementById('tickets-tab').click();
+                viewTickets();
+                
+            } catch (error) {
+                console.error('Error creating ticket:', error);
+                showDialog('Error', 'Failed to create support ticket. Please try again.');
+            }
+        });
+
+        // Close modals when clicking outside
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('dialog-overlay')) {
+                e.target.style.display = 'none';
+            }
         });
 
         // Load data on page load
