@@ -26,33 +26,40 @@
                 <span class="tagline">AtyoursTruly</span>
             </div>
             <div class="nav-links">
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#download" class="nav-link">Download</a>
-                <a href="#dashboard" class="nav-link">Dashboard</a>
-                <a href="#support" class="nav-link">Support</a>
+                <a href="#" class="nav-link" id="logout-btn" style="display: none;">Logout</a>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-container">
-            <div class="hero-content">
-                <h1 class="hero-title">Professional Flight Tracking</h1>
-                <p class="hero-subtitle">Advanced flight tracking application with Microsoft Flight Simulator integration</p>
-                <div class="hero-buttons">
-                    <a href="#download" class="btn btn-primary">Download AirJB</a>
-                    <a href="#dashboard" class="btn btn-secondary">Management Dashboard</a>
+    <!-- Admin Login Section -->
+    <section class="admin-login" id="login-section">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1>AirJB Hub</h1>
+                    <p>Authorized Personnel Only</p>
                 </div>
-            </div>
-            <div class="hero-visual">
-                <div class="flight-path-demo">
-                    <div class="aircraft-icon">✈</div>
-                    <div class="path-line"></div>
+                <form class="login-form" id="admin-login-form">
+                    <div class="input-group">
+                        <label for="admin-email">Administrator Email</label>
+                        <input type="email" id="admin-email" required placeholder="admin@yoursruly.com">
+                    </div>
+                    <div class="input-group">
+                        <label for="admin-password">Password</label>
+                        <input type="password" id="admin-password" required placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">Access Dashboard</button>
+                    <button type="button" class="btn btn-secondary btn-full" id="signup-btn" style="display: none; margin-top: 15px;">Sign Up for Admin Access</button>
+                </form>
+                <div class="login-footer">
+                    <p><em>At Yours Truly</em> • Authorized Personnel Only</p>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Main Dashboard (Hidden until login) -->
+    <div id="dashboard-content" class="dashboard-wrapper" style="display: none;">
 
     <!-- Features Section -->
     <section id="features" class="features">
@@ -92,11 +99,11 @@
                     <h3>Latest Version: v1.2.2</h3>
                     <p>Compatible with Windows 10/11, Microsoft Flight Simulator 2024, and X-Plane 12</p>
                     <ul class="feature-list">
-                        <li>vJoy virtual joystick integration</li>
-                        <li>SimConnect bridge for MSFS</li>
-                        <li>Real-time flight tracking</li>
-                        <li>Automatic updates</li>
-                        <li>Professional UI design</li>
+                        <li>User management and analytics</li>
+                        <li>Support ticket system</li>
+                        <li>Download tracking</li>
+                        <li>Real-time monitoring</li>
+                        <li>Administrative controls</li>
                     </ul>
                 </div>
                 <div class="download-buttons">
@@ -205,6 +212,8 @@
             </div>
         </div>
     </footer>
+
+    </div> <!-- End dashboard-content wrapper -->
 
     <!-- Scripts -->
     <script src="script.js"></script>
