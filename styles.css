@@ -225,6 +225,26 @@ p {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
     position: relative;
     overflow: hidden;
+    max-width: 400px;
+    width: 100%;
+}
+
+/* Wider signup card */
+.signup-page .login-card {
+    max-width: 550px;
+    padding: 30px 40px;
+}
+
+/* Input row for side-by-side fields */
+.input-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.input-row .input-group {
+    flex: 1;
+    margin-bottom: 0;
 }
 
 .login-card::before {
@@ -682,6 +702,20 @@ p {
     .login-card {
         padding: 30px 25px;
         margin: 20px;
+    }
+    
+    .signup-page .login-card {
+        max-width: 90%;
+        padding: 25px 20px;
+    }
+    
+    .input-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .input-row .input-group {
+        margin-bottom: 20px;
     }
     
     .login-header h1 {

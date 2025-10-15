@@ -47,21 +47,7 @@ class AirJBDashboard {
             logoutBtn.addEventListener('click', (e) => this.handleLogout(e));
         }
 
-        // Sign up button
-        const signupBtn = document.getElementById('signup-btn');
-        if (signupBtn) {
-            signupBtn.addEventListener('click', (e) => this.showSignupDialog(e));
-        }
-
-        // Signup dialog buttons
-        const signupCancel = document.getElementById('signup-cancel');
-        const signupSubmit = document.getElementById('signup-submit');
-        if (signupCancel) {
-            signupCancel.addEventListener('click', () => this.hideSignupDialog());
-        }
-        if (signupSubmit) {
-            signupSubmit.addEventListener('click', (e) => this.handleSignup(e));
-        }
+        // Sign up button (now just a link to signup.html)
 
         // Dashboard refresh button (if added)
         const refreshBtn = document.getElementById('refresh-dashboard');
@@ -253,125 +239,6 @@ class AirJBDashboard {
         }
     }
 
-    // Show signup dialog
-    showSignupDialog(e) {
-        e.preventDefault();
-        document.getElementById('signup-dialog').style.display = 'flex';
-        document.getElementById('signup-email').focus();
-    }
-
-    // Hide signup dialog
-    hideSignupDialog() {
-        document.getElementById('signup-dialog').style.display = 'none';
-        // Clear form
-        document.getElementById('signup-form').reset();
-    }
-
-    // Handle admin signup
-    async handleSignup(e) {
-        e.preventDefault();
-        
-        // Get form data
-        const email = document.getElementById('signup-email').value.trim();
-        const password = document.getElementById('signup-password').value;
-        const confirmPassword = document.getElementById('signup-confirm').value;
-        const reason = document.getElementById('signup-reason').value.trim();
-        
-        // Validate form
-        if (!email || !password || !confirmPassword) {
-            this.showError('Please fill in all required fields.');
-            return;
-        }
-        
-        if (password !== confirmPassword) {
-            this.showError('Passwords do not match.');
-            return;
-        }
-        
-        if (password.length < 6) {
-            this.showError('Password must be at least 6 characters long.');
-            return;
-        }
-
-        // Double-check signup availability
-        try {
-            const response = await fetch('https://raw.githubusercontent.com/AirJBn/AirJBhub/main/Yourtruly.txt');
-            const text = await response.text();
-            
-            if (text.trim().toLowerCase() !== 'open') {
-                this.showError('Admin signup is currently closed.');
-                return;
-            }
-        } catch (error) {
-            console.log('Could not verify signup status, proceeding anyway');
-        }
-
-        if (this.useMockData) {
-            this.showError('Signup not available in offline mode.');
-            return;
-        }
-
-        const signupSubmitBtn = document.getElementById('signup-submit');
-        const originalText = signupSubmitBtn.textContent;
-        signupSubmitBtn.textContent = 'Creating Account...';
-        signupSubmitBtn.disabled = true;
-
-        try {
-            // Create Firebase Auth user
-            const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-            
-            // Create admin record in database
-            const adminData = {
-                email: email,
-                role: 'admin', // Default role for new signups
-                active: false, // Requires owner approval
-                permissions: {
-                    analytics: false,
-                    support: false,
-                    users: false
-                },
-                createdAt: new Date().toISOString(),
-                needsApproval: true,
-                requestReason: reason || 'No reason provided'
-            };
-            
-            await this.database.ref(`admins/${user.uid}`).set(adminData);
-            
-            // Sign out the new user (they need approval first)
-            await this.auth.signOut();
-            
-            // Hide dialog and show success
-            this.hideSignupDialog();
-            this.showNotification(
-                'Request Submitted Successfully',
-                'Your admin access request has been submitted and is pending approval. You will be notified when access is granted.',
-                'success'
-            );
-            
-        } catch (error) {
-            console.error('Signup error:', error);
-            
-            let errorMessage = 'Failed to create account. Please try again.';
-            
-            switch (error.code) {
-                case 'auth/email-already-in-use':
-                    errorMessage = 'An account with this email already exists.';
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = 'Please enter a valid email address.';
-                    break;
-                case 'auth/weak-password':
-                    errorMessage = 'Password is too weak. Please choose a stronger password.';
-                    break;
-            }
-            
-            this.showError(errorMessage);
-        } finally {
-            signupSubmitBtn.textContent = originalText;
-            signupSubmitBtn.disabled = false;
-        }
-    }
 
     // Show login page
     showLogin() {
