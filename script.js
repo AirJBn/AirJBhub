@@ -234,10 +234,11 @@ class AirJBDashboard {
             }
         } catch (error) {
             console.error('Error checking signup availability:', error);
-            // Hide signup button on error (fail safe)
+            // For now, show button if we can't check (you can change this)
             const signupBtn = document.getElementById('signup-btn');
             if (signupBtn) {
-                signupBtn.style.display = 'none';
+                signupBtn.style.display = 'block'; // Changed to show on error for testing
+                console.log('Showing signup button due to fetch error');
             }
         }
     }
@@ -660,6 +661,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize analytics
     window.airjbAnalytics = new AirJBAnalytics();
+
+    // Check signup availability independently (fallback)
+    setTimeout(() => {
+        if (window.airjbDashboard) {
+            window.airjbDashboard.checkSignupAvailability();
+        }
+    }, 2000);
 
     // Add CSS animations for notifications
     const style = document.createElement('style');
