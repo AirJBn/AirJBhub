@@ -1,0 +1,58 @@
+# GitHub Pages Configuration for AirJBHub
+
+# Site settings
+title: "AirJB - Flight Tracking & MSFS Integration"
+description: "Professional flight tracking application with Microsoft Flight Simulator integration. Download management dashboard and track your virtual flights."
+url: "https://airjbn.github.io"
+baseurl: "/AirJBhub"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+
+# Plugins
+plugins:
+  - jekyll-sitemap
+  - jekyll-feed
+
+# Exclude files from processing
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - .sass-cache
+  - .jekyll-cache
+  - gemfiles
+  - .github
+
+# Include files
+include:
+  - _pages
+  - assets
+
+# Collections
+collections_dir: collections
+
+# SEO settings
+author: "AirJB Team"
+twitter:
+  username: airjb
+  card: summary_large_image
+
+# Social links
+github_username: AirJBn
+repository: AirJBn/AirJBhub
+
+# Analytics (if needed)
+google_analytics: # Add Google Analytics ID if needed
+
+# Theme
+theme: minima
+
+# Custom variables
+airjb:
+  version: "1.2.2"
+  download_url: "https://github.com/AirJBn/AirJB/releases/latest"
+  repository_url: "https://github.com/AirJBn/AirJB"
