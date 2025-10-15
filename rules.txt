@@ -1,0 +1,155 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    
+    "pilots": {
+      "$uid": {
+        ".read": "$uid === auth.uid || root.child('pilots').child(auth.uid).child('privacySettings').child('showPosition').val() === true",
+        ".write": "$uid === auth.uid",
+        ".validate": "newData.hasChildren(['uid', 'email', 'callsign', 'createdAt'])",
+        
+        "uid": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "email": {
+          ".validate": "newData.val() === auth.email"
+        },
+        "callsign": {
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 10"
+        },
+        "isOnline": {
+          ".validate": "newData.isBoolean()"
+        },
+        "totalFlightHours": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "privacySettings": {
+          "showPosition": {
+            ".validate": "newData.isBoolean()"
+          },
+          "showCallsign": {
+            ".validate": "newData.isBoolean()"
+          },
+          "allowDirectMessages": {
+            ".validate": "newData.isBoolean()"
+          }
+        }
+      }
+    },
+    
+    "flight_data": {
+      "$uid": {
+        ".read": "$uid === auth.uid || root.child('pilots').child(auth.uid).child('privacySettings').child('showPosition').val() === true",
+        ".write": "$uid === auth.uid",
+        "position": {
+          ".validate": "newData.hasChildren(['lat', 'lng'])"
+        },
+        "altitude": {
+          ".validate": "newData.isNumber()"
+        },
+        "speed": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "heading": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 360"
+        }
+      }
+    },
+    
+    "routes": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        "$routeId": {
+          ".validate": "newData.hasChildren(['name', 'waypoints', 'createdAt'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          "waypoints": {
+            ".validate": "newData.hasChildren()"
+          }
+        }
+      }
+    },
+    
+    "surveys": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$surveyId": {
+        ".validate": "newData.hasChildren(['userId', 'timestamp', 'ratings', 'appVersion'])",
+        "userId": {
+          ".validate": "newData.isString()"
+        },
+        "userEmail": {
+          ".validate": "newData.isString()"
+        },
+        "timestamp": {
+          ".validate": "newData.isString()"
+        },
+        "appVersion": {
+          ".validate": "newData.isString()"
+        },
+        "ratings": {
+          ".validate": "newData.hasChildren(['vjoyIntegration', 'controlResponsiveness', 'setupEase'])",
+          "vjoyIntegration": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+          },
+          "controlResponsiveness": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+          },
+          "setupEase": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+          }
+        }
+      }
+    },
+    
+    "support_tickets": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$ticketId": {
+        ".validate": "newData.hasChildren(['ticketId', 'userId', 'message', 'status', 'timestamp'])",
+        "ticketId": {
+          ".validate": "newData.isString()"
+        },
+        "userId": {
+          ".validate": "newData.isString()"
+        },
+        "userEmail": {
+          ".validate": "newData.isString()"
+        },
+        "message": {
+          ".validate": "newData.isString() && newData.val().length > 0"
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === 'open' || newData.val() === 'in_progress' || newData.val() === 'resolved' || newData.val() === 'closed')"
+        },
+        "priority": {
+          ".validate": "newData.isString() && (newData.val() === 'low' || newData.val() === 'normal' || newData.val() === 'high' || newData.val() === 'urgent')"
+        },
+        "timestamp": {
+          ".validate": "newData.isString()"
+        },
+        "appVersion": {
+          ".validate": "newData.isString()"
+        },
+        "replies": {
+          ".validate": "newData.hasChildren() || !newData.exists()",
+          "$replyIndex": {
+            ".validate": "newData.hasChildren(['author', 'message', 'timestamp'])",
+            "author": {
+              ".validate": "newData.isString()"
+            },
+            "message": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "timestamp": {
+              ".validate": "newData.isString()"
+            }
+          }
+        }
+      }
+    }
+  }
+} 

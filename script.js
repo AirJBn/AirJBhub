@@ -94,8 +94,6 @@ class AirJBDashboard {
             }
         });
 
-        // Check signup availability
-        this.checkSignupAvailability();
     }
 
     // Verify if authenticated user has admin privileges
@@ -121,68 +119,23 @@ class AirJBDashboard {
     async handleLogin(e) {
         e.preventDefault();
         
-        const email = document.getElementById('admin-email').value;
+        const email = document.getElementById('admin-email').value.trim();
         const password = document.getElementById('admin-password').value;
         
-        if (this.useMockData) {
-            // Fallback authentication for when Firebase is not available
-            const validAdmins = {
-                'admin@yoursruly.com': 'admin123',
-                'noah@yoursruly.com': 'airjb2024',
-            };
+        // Obfuscated admin credentials
+        const adminEmail = atob('bm9haHdlbGxkQGdtYWlsLmNvbQ==');
+        const adminPass = atob('QWlyamJodWJAeW91cnN0cnVseTk5');
+        
+        if (email === adminEmail && password === adminPass) {
+            this.isAuthenticated = true;
+            const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000);
+            localStorage.setItem('airjb-admin-auth', 'authenticated');
+            localStorage.setItem('airjb-admin-auth-expiry', expiryTime.toString());
             
-            if (validAdmins[email] && validAdmins[email] === password) {
-                this.isAuthenticated = true;
-                const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000);
-                localStorage.setItem('airjb-admin-auth', 'authenticated');
-                localStorage.setItem('airjb-admin-auth-expiry', expiryTime.toString());
-                this.showDashboard();
-            } else {
-                this.showError('Invalid credentials. Access denied.');
-            }
-            return;
-        }
-
-        // Show loading state
-        const submitBtn = document.querySelector('.btn-primary');
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'Authenticating...';
-        submitBtn.disabled = true;
-
-        try {
-            // Firebase Auth sign in
-            const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-            
-            // Verify admin status (this will be handled by onAuthStateChanged)
-            console.log('Admin login successful:', user.email);
-            
-        } catch (error) {
-            console.error('Login error:', error);
-            
-            // Handle specific Firebase Auth errors
-            let errorMessage = 'Login failed. Please check your credentials.';
-            
-            switch (error.code) {
-                case 'auth/user-not-found':
-                    errorMessage = 'Admin account not found.';
-                    break;
-                case 'auth/wrong-password':
-                    errorMessage = 'Incorrect password.';
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = 'Invalid email address.';
-                    break;
-                case 'auth/too-many-requests':
-                    errorMessage = 'Too many failed attempts. Please try again later.';
-                    break;
-            }
-            
-            this.showError(errorMessage);
-        } finally {
-            // Reset button state
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
+            // Redirect to the main hub
+            window.location.href = 'airjb-hub.html';
+        } else {
+            this.showError('Invalid credentials. Access denied.');
         }
     }
 
@@ -190,54 +143,12 @@ class AirJBDashboard {
     async handleLogout(e) {
         e.preventDefault();
         
-        if (this.useMockData) {
-            // Fallback logout
-            this.isAuthenticated = false;
-            localStorage.removeItem('airjb-admin-auth');
-            localStorage.removeItem('airjb-admin-auth-expiry');
-            this.showLogin();
-            return;
-        }
-
-        try {
-            // Firebase Auth sign out
-            await this.auth.signOut();
-            console.log('Admin logged out successfully');
-        } catch (error) {
-            console.error('Logout error:', error);
-            // Force logout even if Firebase fails
-            this.isAuthenticated = false;
-            this.currentUser = null;
-            this.showLogin();
-        }
+        this.isAuthenticated = false;
+        localStorage.removeItem('airjb-admin-auth');
+        localStorage.removeItem('airjb-admin-auth-expiry');
+        this.showLogin();
     }
 
-    // Check if admin signup is available by reading GitHub file
-    async checkSignupAvailability() {
-        try {
-            const response = await fetch('https://raw.githubusercontent.com/AirJBn/AirJBhub/main/Yourtruly.txt');
-            const text = await response.text();
-            
-            const signupBtn = document.getElementById('signup-btn');
-            if (signupBtn) {
-                if (text.trim().toLowerCase() === 'open') {
-                    signupBtn.style.display = 'block';
-                    console.log('Admin signup is OPEN');
-                } else {
-                    signupBtn.style.display = 'none';
-                    console.log('Admin signup is CLOSED');
-                }
-            }
-        } catch (error) {
-            console.error('Error checking signup availability:', error);
-            // For now, show button if we can't check (you can change this)
-            const signupBtn = document.getElementById('signup-btn');
-            if (signupBtn) {
-                signupBtn.style.display = 'block'; // Changed to show on error for testing
-                console.log('Showing signup button due to fetch error');
-            }
-        }
-    }
 
 
     // Show login page
@@ -564,12 +475,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize analytics
     window.airjbAnalytics = new AirJBAnalytics();
 
-    // Check signup availability independently (fallback)
-    setTimeout(() => {
-        if (window.airjbDashboard) {
-            window.airjbDashboard.checkSignupAvailability();
-        }
-    }, 2000);
 
     // Add CSS animations for notifications
     const style = document.createElement('style');

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirJB Hub - Admin Dashboard</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    
+    <style>
+        .hub-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .hub-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 1px solid #404040;
+        }
+        
+        .hub-title {
+            color: #00ff88;
+            font-size: 2rem;
+            font-weight: 300;
+            margin: 0;
+        }
+        
+        .hub-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #ffffff;
+        }
+        
+        .hub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .hub-card {
+            background: #2d2d2d;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .hub-card:hover {
+            border-color: #00ff88;
+            transform: translateY(-2px);
+        }
+        
+        .hub-card h3 {
+            color: #00ff88;
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin: 0 0 15px 0;
+        }
+        
+        .hub-card p {
+            color: #cccccc;
+            font-size: 0.9rem;
+            font-weight: 200;
+            margin: 0 0 20px 0;
+            line-height: 1.5;
+        }
+        
+        .hub-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .hub-btn {
+            background: #00ff88;
+            color: #000000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .hub-btn:hover {
+            background: #00cc6b;
+            transform: translateY(-1px);
+        }
+        
+        .hub-btn.secondary {
+            background: transparent;
+            color: #00ff88;
+            border: 1px solid #00ff88;
+        }
+        
+        .hub-btn.secondary:hover {
+            background: #00ff88;
+            color: #000000;
+        }
+        
+        .hub-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            color: #00ff88;
+            font-size: 2rem;
+            font-weight: 300;
+            margin: 0;
+        }
+        
+        .stat-label {
+            color: #cccccc;
+            font-size: 0.85rem;
+            font-weight: 200;
+            margin: 5px 0 0 0;
+        }
+        
+        .quick-actions {
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .quick-actions h3 {
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 400;
+            margin: 0 0 20px 0;
+        }
+        
+        .quick-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 768px) {
+            .hub-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .hub-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .hub-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .quick-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>AirJB</h1>
+                <span class="tagline">AtyoursTruly</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hub-container">
+        <!-- Header -->
+        <div class="hub-header">
+            <h1 class="hub-title">AirJB Hub</h1>
+            <div class="hub-user">
+                <span>Welcome, Admin</span>
+                <div style="width: 8px; height: 8px; background: #00ff88; border-radius: 50%;"></div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="hub-stats">
+            <div class="stat-card">
+                <h2 class="stat-number" id="total-users">--</h2>
+                <p class="stat-label">Total Users</p>
+            </div>
+            <div class="stat-card">
+                <h2 class="stat-number" id="active-pilots">--</h2>
+                <p class="stat-label">Active Pilots</p>
+            </div>
+            <div class="stat-card">
+                <h2 class="stat-number" id="total-downloads">--</h2>
+                <p class="stat-label">App Downloads</p>
+            </div>
+            <div class="stat-card">
+                <h2 class="stat-number" id="support-tickets">--</h2>
+                <p class="stat-label">Open Tickets</p>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="quick-buttons">
+                <button class="hub-btn" onclick="refreshData()">Refresh Data</button>
+                <button class="hub-btn secondary" onclick="exportData()">Export Data</button>
+                <button class="hub-btn secondary" onclick="viewLogs()">View Logs</button>
+                <button class="hub-btn secondary" onclick="systemStatus()">System Status</button>
+            </div>
+        </div>
+
+        <!-- Management Cards -->
+        <div class="hub-grid">
+            <!-- User Management -->
+            <div class="hub-card">
+                <h3>User Management</h3>
+                <p>Manage pilot accounts, view user activity, and handle account issues.</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" onclick="viewUsers()">View Users</button>
+                    <button class="hub-btn secondary" onclick="userAnalytics()">Analytics</button>
+                </div>
+            </div>
+
+            <!-- Flight Data -->
+            <div class="hub-card">
+                <h3>Flight Data</h3>
+                <p>Monitor real-time flight tracking, routes, and pilot activity across the network.</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" onclick="viewFlights()">Live Flights</button>
+                    <button class="hub-btn secondary" onclick="flightHistory()">History</button>
+                </div>
+            </div>
+
+            <!-- Support Center -->
+            <div class="hub-card">
+                <h3>Support Center</h3>
+                <p>Handle support tickets, user feedback, and technical issues.</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" onclick="viewTickets()">View Tickets</button>
+                    <button class="hub-btn secondary" onclick="createTicket()">New Ticket</button>
+                </div>
+            </div>
+
+            <!-- App Analytics -->
+            <div class="hub-card">
+                <h3>App Analytics</h3>
+                <p>Track app performance, download statistics, and user engagement metrics.</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" onclick="viewAnalytics()">View Analytics</button>
+                    <button class="hub-btn secondary" onclick="generateReport()">Generate Report</button>
+                </div>
+            </div>
+
+            <!-- System Settings -->
+            <div class="hub-card">
+                <h3>System Settings</h3>
+                <p>Configure system parameters, manage integrations, and update settings.</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" onclick="systemSettings()">Settings</button>
+                    <button class="hub-btn secondary" onclick="backupData()">Backup</button>
+                </div>
+            </div>
+
+            <!-- Content Management -->
+            <div class="hub-card">
+                <h3>Content Management</h3>
+                <p>Manage app content, announcements, and user communications.</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" onclick="manageContent()">Manage Content</button>
+                    <button class="hub-btn secondary" onclick="sendAnnouncement()">Announce</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase CDN scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDtdxcSoVmLj-gGRkj0E5zXrTRHPZK3Fi4",
+            authDomain: "airjb-f1883.firebaseapp.com",
+            databaseURL: "https://airjb-f1883-default-rtdb.firebaseio.com/",
+            projectId: "airjb-f1883",
+            storageBucket: "airjb-f1883.appspot.com",
+            messagingSenderId: "485974977846",
+            appId: "1:485974977846:web:f1883airjb001"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                // Load user count
+                const pilotsSnapshot = await database.ref('pilots').once('value');
+                const pilotsData = pilotsSnapshot.val() || {};
+                document.getElementById('total-users').textContent = Object.keys(pilotsData).length;
+                
+                // Count active pilots
+                const activePilots = Object.values(pilotsData).filter(pilot => pilot.isOnline).length;
+                document.getElementById('active-pilots').textContent = activePilots;
+                
+                // Load support tickets
+                const ticketsSnapshot = await database.ref('support_tickets').once('value');
+                const ticketsData = ticketsSnapshot.val() || {};
+                const openTickets = Object.values(ticketsData).filter(ticket => ticket.status === 'open').length;
+                document.getElementById('support-tickets').textContent = openTickets;
+                
+                // Mock download count (you can replace with real data)
+                document.getElementById('total-downloads').textContent = '1,247';
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                // Set fallback values
+                document.getElementById('total-users').textContent = '--';
+                document.getElementById('active-pilots').textContent = '--';
+                document.getElementById('support-tickets').textContent = '--';
+                document.getElementById('total-downloads').textContent = '--';
+            }
+        }
+
+        // Management functions
+        function viewUsers() {
+            alert('User Management - Coming Soon');
+        }
+
+        function userAnalytics() {
+            alert('User Analytics - Coming Soon');
+        }
+
+        function viewFlights() {
+            alert('Live Flight Tracking - Coming Soon');
+        }
+
+        function flightHistory() {
+            alert('Flight History - Coming Soon');
+        }
+
+        function viewTickets() {
+            alert('Support Tickets - Coming Soon');
+        }
+
+        function createTicket() {
+            alert('Create Ticket - Coming Soon');
+        }
+
+        function viewAnalytics() {
+            alert('App Analytics - Coming Soon');
+        }
+
+        function generateReport() {
+            alert('Generate Report - Coming Soon');
+        }
+
+        function systemSettings() {
+            alert('System Settings - Coming Soon');
+        }
+
+        function backupData() {
+            alert('Data Backup - Coming Soon');
+        }
+
+        function manageContent() {
+            alert('Content Management - Coming Soon');
+        }
+
+        function sendAnnouncement() {
+            alert('Send Announcement - Coming Soon');
+        }
+
+        // Quick action functions
+        function refreshData() {
+            loadDashboardData();
+            showNotification('Data refreshed successfully');
+        }
+
+        function exportData() {
+            alert('Export Data - Coming Soon');
+        }
+
+        function viewLogs() {
+            alert('System Logs - Coming Soon');
+        }
+
+        function systemStatus() {
+            alert('System Status - Coming Soon');
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #00ff88;
+                color: #000000;
+                padding: 15px 20px;
+                border-radius: 4px;
+                font-family: 'Josefin Sans', sans-serif;
+                font-weight: 400;
+                z-index: 1000;
+                animation: slideInRight 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('airjb-admin-auth');
+            localStorage.removeItem('airjb-admin-auth-expiry');
+            window.location.href = 'index.html';
+        });
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+        });
+
+        // Add CSS animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
