@@ -764,3 +764,22 @@ p {
 ::-webkit-scrollbar-thumb:hover {
     background: #505050;
 }
+
+/* Signup Dialog Styles */
+.signup-notice {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 15px;
+}
+
+.signup-notice p {
+    color: #ffffff;
+    font-size: 13px;
+    margin: 0;
+}
+
+.signup-notice strong {
+    color: #00ff88;
+}

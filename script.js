@@ -50,7 +50,17 @@ class AirJBDashboard {
         // Sign up button
         const signupBtn = document.getElementById('signup-btn');
         if (signupBtn) {
-            signupBtn.addEventListener('click', (e) => this.handleSignup(e));
+            signupBtn.addEventListener('click', (e) => this.showSignupDialog(e));
+        }
+
+        // Signup dialog buttons
+        const signupCancel = document.getElementById('signup-cancel');
+        const signupSubmit = document.getElementById('signup-submit');
+        if (signupCancel) {
+            signupCancel.addEventListener('click', () => this.hideSignupDialog());
+        }
+        if (signupSubmit) {
+            signupSubmit.addEventListener('click', (e) => this.handleSignup(e));
         }
 
         // Dashboard refresh button (if added)
@@ -243,10 +253,46 @@ class AirJBDashboard {
         }
     }
 
+    // Show signup dialog
+    showSignupDialog(e) {
+        e.preventDefault();
+        document.getElementById('signup-dialog').style.display = 'flex';
+        document.getElementById('signup-email').focus();
+    }
+
+    // Hide signup dialog
+    hideSignupDialog() {
+        document.getElementById('signup-dialog').style.display = 'none';
+        // Clear form
+        document.getElementById('signup-form').reset();
+    }
+
     // Handle admin signup
     async handleSignup(e) {
         e.preventDefault();
         
+        // Get form data
+        const email = document.getElementById('signup-email').value.trim();
+        const password = document.getElementById('signup-password').value;
+        const confirmPassword = document.getElementById('signup-confirm').value;
+        const reason = document.getElementById('signup-reason').value.trim();
+        
+        // Validate form
+        if (!email || !password || !confirmPassword) {
+            this.showError('Please fill in all required fields.');
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            this.showError('Passwords do not match.');
+            return;
+        }
+        
+        if (password.length < 6) {
+            this.showError('Password must be at least 6 characters long.');
+            return;
+        }
+
         // Double-check signup availability
         try {
             const response = await fetch('https://raw.githubusercontent.com/AirJBn/AirJBhub/main/Yourtruly.txt');
@@ -257,21 +303,7 @@ class AirJBDashboard {
                 return;
             }
         } catch (error) {
-            this.showError('Unable to verify signup availability. Please try again later.');
-            return;
-        }
-
-        // Show signup form (you can customize this)
-        const email = prompt('Enter your email address for admin access:');
-        const password = prompt('Create a password (minimum 6 characters):');
-        
-        if (!email || !password) {
-            return;
-        }
-        
-        if (password.length < 6) {
-            this.showError('Password must be at least 6 characters long.');
-            return;
+            console.log('Could not verify signup status, proceeding anyway');
         }
 
         if (this.useMockData) {
@@ -279,10 +311,10 @@ class AirJBDashboard {
             return;
         }
 
-        const signupBtn = document.getElementById('signup-btn');
-        const originalText = signupBtn.textContent;
-        signupBtn.textContent = 'Creating Account...';
-        signupBtn.disabled = true;
+        const signupSubmitBtn = document.getElementById('signup-submit');
+        const originalText = signupSubmitBtn.textContent;
+        signupSubmitBtn.textContent = 'Creating Account...';
+        signupSubmitBtn.disabled = true;
 
         try {
             // Create Firebase Auth user
@@ -300,7 +332,8 @@ class AirJBDashboard {
                     users: false
                 },
                 createdAt: new Date().toISOString(),
-                needsApproval: true
+                needsApproval: true,
+                requestReason: reason || 'No reason provided'
             };
             
             await this.database.ref(`admins/${user.uid}`).set(adminData);
@@ -308,9 +341,11 @@ class AirJBDashboard {
             // Sign out the new user (they need approval first)
             await this.auth.signOut();
             
+            // Hide dialog and show success
+            this.hideSignupDialog();
             this.showNotification(
-                'Account Created Successfully',
-                'Your admin account has been created and is pending approval. You will be notified when access is granted.',
+                'Request Submitted Successfully',
+                'Your admin access request has been submitted and is pending approval. You will be notified when access is granted.',
                 'success'
             );
             
@@ -333,8 +368,8 @@ class AirJBDashboard {
             
             this.showError(errorMessage);
         } finally {
-            signupBtn.textContent = originalText;
-            signupBtn.disabled = false;
+            signupSubmitBtn.textContent = originalText;
+            signupSubmitBtn.disabled = false;
         }
     }
 
