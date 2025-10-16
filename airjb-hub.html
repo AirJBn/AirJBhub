@@ -773,8 +773,14 @@
                 const pilotsData = pilotsSnapshot.val() || {};
                 document.getElementById('total-users').textContent = Object.keys(pilotsData).length;
                 
-                // Count active pilots
-                const activePilots = Object.values(pilotsData).filter(pilot => pilot.isOnline).length;
+                // Count active pilots (online with recent activity)
+                const now = new Date();
+                const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+                const activePilots = Object.values(pilotsData).filter(pilot => {
+                    if (!pilot.isOnline) return false;
+                    if (!pilot.lastSeen) return pilot.isOnline; // Fallback for old data
+                    return new Date(pilot.lastSeen) > fiveMinutesAgo;
+                }).length;
                 document.getElementById('active-pilots').textContent = activePilots;
                 
                 // Load support tickets
@@ -862,7 +868,15 @@
                 const pilots = Object.entries(pilotsData);
                 
                 totalUsersSpan.textContent = pilots.length;
-                const onlineCount = pilots.filter(([_, pilot]) => pilot.isOnline).length;
+                
+                // Count truly active users (online with recent activity)
+                const now = new Date();
+                const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+                const onlineCount = pilots.filter(([_, pilot]) => {
+                    if (!pilot.isOnline) return false;
+                    if (!pilot.lastSeen) return pilot.isOnline; // Fallback for old data
+                    return new Date(pilot.lastSeen) > fiveMinutesAgo;
+                }).length;
                 onlineUsersSpan.textContent = onlineCount;
                 
                 if (pilots.length === 0) {
@@ -876,8 +890,8 @@
                                 <p>Flight Hours: ${pilot.totalFlightHours || 0}</p>
                                 <p>Member since: ${pilot.createdAt ? new Date(pilot.createdAt).toLocaleDateString() : 'Unknown'}</p>
                             </div>
-                            <div class="user-status ${pilot.isOnline ? 'online' : 'offline'}">
-                                ${pilot.isOnline ? 'Online' : 'Offline'}
+                            <div class="user-status ${pilot.isOnline && (!pilot.lastSeen || new Date(pilot.lastSeen) > new Date(Date.now() - 5 * 60 * 1000)) ? 'online' : 'offline'}">
+                                ${pilot.isOnline && (!pilot.lastSeen || new Date(pilot.lastSeen) > new Date(Date.now() - 5 * 60 * 1000)) ? 'Online' : 'Offline'}
                             </div>
                         </div>
                     `).join('');
