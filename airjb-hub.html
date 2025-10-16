@@ -970,7 +970,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>AirJB</h1>
-                <span class="tagline">AtyoursTruly</span>
+                <span class="tagline">AtyoursTruly 1.5</span>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
@@ -2097,6 +2097,7 @@
         // Quick action functions
         function refreshData() {
             loadDashboardData();
+            loadUsersListInline(); // Also refresh the users list
             showNotification('Data refreshed successfully');
         }
 
