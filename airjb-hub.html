@@ -1429,6 +1429,8 @@
                 const now = Date.now();
                 const onlineThreshold = 2 * 60 * 1000; // 2 minutes to be more responsive
                 
+                console.log(`🔍 Checking ${Object.keys(pilotsData).length} users for session changes...`);
+                
                 for (const [userId, userData] of Object.entries(pilotsData)) {
                     const wasOnline = userStatusCache.get(userId) || false;
                     
@@ -1437,7 +1439,22 @@
                     if (userData.isOnline) {
                         if (userData.lastSeen) {
                             const lastSeenTime = new Date(userData.lastSeen).getTime();
-                            isCurrentlyOnline = (now - lastSeenTime) < onlineThreshold;
+                            const timeSinceLastSeen = now - lastSeenTime;
+                            isCurrentlyOnline = timeSinceLastSeen < onlineThreshold;
+                            
+                            // Debug logging for your account
+                            if (userData.email === 'noahwelld@gmail.com' || userData.callsign === 'AIRJB001SS') {
+                                console.log(`🔍 Debug for ${userData.callsign || userData.email}:`, {
+                                    isOnline: userData.isOnline,
+                                    lastSeen: userData.lastSeen,
+                                    timeSinceLastSeen: Math.floor(timeSinceLastSeen / 1000) + 's',
+                                    threshold: Math.floor(onlineThreshold / 1000) + 's',
+                                    isCurrentlyOnline,
+                                    wasOnline,
+                                    sessionStartTime: userData.sessionStartTime,
+                                    totalSessionTime: userData.totalSessionTime
+                                });
+                            }
                         } else {
                             isCurrentlyOnline = true; // Fallback for old data
                         }
@@ -2099,6 +2116,32 @@
             loadDashboardData();
             loadUsersListInline(); // Also refresh the users list
             showNotification('Data refreshed successfully');
+        }
+
+        // Manual session test function (temporary for debugging)
+        async function testSessionForUser(userEmail) {
+            try {
+                const pilotsSnapshot = await database.ref('pilots').once('value');
+                const pilotsData = pilotsSnapshot.val() || {};
+                
+                for (const [userId, userData] of Object.entries(pilotsData)) {
+                    if (userData.email === userEmail) {
+                        console.log(`🧪 Testing session for ${userData.callsign || userData.email}`);
+                        console.log('Current data:', userData);
+                        
+                        // Force start a session
+                        await handleUserCameOnline(userId, userData);
+                        console.log('✅ Session started manually');
+                        
+                        // Refresh the display
+                        loadUsersListInline();
+                        return;
+                    }
+                }
+                console.log('❌ User not found:', userEmail);
+            } catch (error) {
+                console.error('Error testing session:', error);
+            }
         }
 
         function exportData() {
