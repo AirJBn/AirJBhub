@@ -208,21 +208,14 @@ class AirJBDashboard {
     // Show login page
     showLogin() {
         document.getElementById('login-section').style.display = 'flex';
-        document.getElementById('dashboard-content').style.display = 'none';
         document.getElementById('logout-btn').style.display = 'none';
         document.querySelector('.navbar').style.display = 'none';
     }
 
-    // Show dashboard
+    // Show dashboard (redirects to hub)
     showDashboard() {
-        document.getElementById('login-section').style.display = 'none';
-        document.getElementById('dashboard-content').style.display = 'block';
-        document.getElementById('logout-btn').style.display = 'block';
-        document.querySelector('.navbar').style.display = 'block';
-        
-        // Load dashboard data
-        this.loadDashboardData();
-        this.startRealTimeUpdates();
+        // Redirect directly to hub instead of showing dashboard content
+        window.location.href = 'airjb-hub.html';
     }
 
     // Show error message
