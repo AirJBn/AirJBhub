@@ -653,7 +653,42 @@
             display: flex;
             gap: 20px;
             font-size: 12px;
-            color: #888888;
+            color: #ffffff;
+        }
+
+        .ticket-status-display {
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .ticket-status-display.open {
+            color: #2d5a2d;
+            background: rgba(45, 90, 45, 0.2);
+        }
+
+        .ticket-status-display.in_progress {
+            color: #2196f3;
+            background: rgba(33, 150, 243, 0.2);
+        }
+
+        .ticket-status-display.resolved {
+            color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .ticket-status-display.closed {
+            color: #f44336;
+            background: rgba(244, 67, 54, 0.2);
+        }
+
+        .ticket-subject-display {
+            margin-top: 10px;
+            padding: 8px 0;
+            color: #ffffff;
+            font-size: 14px;
+            border-top: 1px solid #404040;
         }
 
         .conversation {
@@ -738,12 +773,13 @@
 
         /* Users List Styles */
         .users-list-section {
-            grid-column: 1 / -1;
+            grid-column: 1 / 2;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 20px;
             margin-top: 20px;
+            max-width: 600px;
         }
 
         .users-list-header {
@@ -830,7 +866,7 @@
 
         .user-email {
             color: #888888;
-            font-size: 12px;
+            font-size: 14px;
         }
 
         .session-stats {
@@ -998,8 +1034,8 @@
                 </div>
             </div>
 
-            <!-- Users List (Hidden by default) -->
-            <div class="users-list-section" id="users-list-section" style="display: none;">
+            <!-- Users List (Shown by default) -->
+            <div class="users-list-section" id="users-list-section" style="display: block;">
                 <div class="users-list-header">
                     <h4>Registered Users</h4>
                     <div class="users-stats">
@@ -1008,7 +1044,7 @@
                 </div>
             </div>
                 <div class="users-list-container" id="users-list-container">
-                    <div class="loading-message">Click "Toggle Users List" to load users...</div>
+                    <div class="loading-message">Loading users...</div>
                 </div>
             </div>
 
@@ -1197,6 +1233,9 @@
                 // Load dashboard data
                 loadDashboardData();
                 
+                // Load users list since it's shown by default
+                loadUsersListInline();
+                
             } catch (error) {
                 console.error('Error verifying admin:', error);
                 await auth.signOut();
@@ -1383,12 +1422,16 @@
                 document.getElementById('total-users').textContent = Object.keys(pilotsData).length;
                 
                 // Count active pilots (online with recent activity)
-                const now = new Date();
-                const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+                const now = Date.now();
+                const onlineThreshold = 5 * 60 * 1000; // 5 minutes
                 const activePilots = Object.values(pilotsData).filter(pilot => {
                     if (!pilot.isOnline) return false;
-                    if (!pilot.lastSeen) return pilot.isOnline; // Fallback for old data
-                    return new Date(pilot.lastSeen) > fiveMinutesAgo;
+                    if (pilot.lastSeen) {
+                        return (now - pilot.lastSeen) < onlineThreshold;
+                    } else {
+                        // Fallback for old data - if isOnline is true but no lastSeen
+                        return true;
+                    }
                 }).length;
                 document.getElementById('active-pilots').textContent = activePilots;
                 
@@ -1500,17 +1543,32 @@
                 let onlineCount = 0;
                 
                 const usersList = users.map(([userId, userData]) => {
-                    const isOnline = userData.isOnline && userData.lastSeen && (now - userData.lastSeen) < onlineThreshold;
+                    // More flexible online detection
+                    let isOnline = false;
+                    
+                    if (userData.isOnline) {
+                        if (userData.lastSeen) {
+                            // If lastSeen exists, check if it's within threshold
+                            isOnline = (now - userData.lastSeen) < onlineThreshold;
+                        } else {
+                            // If no lastSeen but isOnline is true, consider online (fallback for older data)
+                            isOnline = true;
+                        }
+                    }
+                    
                     if (isOnline) onlineCount++;
                     
                     const totalSessionTime = userData.totalSessionTime || '0h 0m';
                     const sessionCount = userData.sessionCount || 0;
                     const lastSession = userData.lastSessionDuration || 'N/A';
                     
+                    // Debug info (you can remove this later)
+                    console.log(`User ${userData.displayName || userData.email}: isOnline=${userData.isOnline}, lastSeen=${userData.lastSeen}, calculated=${isOnline}`);
+                    
                     return `
                         <div class="user-item">
                             <div class="user-status-indicator ${isOnline ? 'online' : 'offline'}"></div>
-                            <div class="user-name">${userData.displayName || userData.email || 'Unknown User'}</div>
+                            <div class="user-name">${userData.callsign || userData.displayName || 'Unknown User'}</div>
                             <div class="user-session-info">
                                 <div class="user-email">${userData.email || ''}</div>
                                 <div class="session-stats">Total: ${totalSessionTime} • Sessions: ${sessionCount} • Last: ${lastSession}</div>
@@ -1702,46 +1760,192 @@
             }
         }
 
-        function selectTicket(ticketId) {
+        async function selectTicket(ticketId) {
             // Remove previous selection
             document.querySelectorAll('.ticket-item').forEach(item => item.classList.remove('selected'));
             // Add selection to clicked item
             event.target.closest('.ticket-item').classList.add('selected');
             
-            // Show ticket details (placeholder for now)
             const ticketDetails = document.getElementById('ticket-details');
-            ticketDetails.innerHTML = `
-                <div class="active-ticket">
-                    <div class="ticket-info-header">
-                        <h3 class="ticket-info-title">Ticket #${ticketId.slice(-8)}</h3>
-                        <div class="ticket-info-meta">
-                            <span>Status: Open</span>
-                            <span>Created: Today</span>
-                        </div>
+            ticketDetails.innerHTML = '<div class="loading-message">Loading ticket details...</div>';
+            
+            try {
+                // Get the actual ticket data
+                const ticketSnapshot = await database.ref(`support_tickets/${ticketId}`).once('value');
+                const ticketData = ticketSnapshot.val();
+                
+                if (!ticketData) {
+                    ticketDetails.innerHTML = '<div class="loading-message">Ticket not found</div>';
+                    return;
+                }
+                
+                // Format the creation date
+                const createdDate = ticketData.timestamp ? 
+                    new Date(ticketData.timestamp).toLocaleDateString() : 'Unknown date';
+                const createdTime = ticketData.timestamp ? 
+                    new Date(ticketData.timestamp).toLocaleTimeString() : 'Unknown time';
+                
+                // Build conversation messages
+                let conversationHtml = '';
+                
+                // Original message from user
+                conversationHtml += `
+                    <div class="message user-message">
+                        <div class="message-author">${ticketData.userEmail || 'User'}</div>
+                        <div class="message-content">${ticketData.message || 'No message content'}</div>
+                        <div class="message-time">${createdTime}</div>
                     </div>
-                    <div class="conversation">
-                        <div class="message user-message">
-                            <div class="message-author">User</div>
-                            <div class="message-content">This is a sample message from the user...</div>
-                            <div class="message-time">2:30 PM</div>
-                        </div>
-                    </div>
-                    <div class="reply-form">
-                        <textarea class="reply-textarea" placeholder="Type your reply here..."></textarea>
-                        <div class="reply-form-actions">
-                            <div class="status-controls">
-                                <select class="status-select">
-                                    <option value="open">Open</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="resolved">Resolved</option>
-                                    <option value="closed">Closed</option>
-                                </select>
+                `;
+                
+                // Add any replies
+                if (ticketData.replies && Array.isArray(ticketData.replies)) {
+                    ticketData.replies.forEach(reply => {
+                        const isAdmin = reply.isAdmin || reply.author === 'admin';
+                        const replyTime = reply.timestamp ? 
+                            new Date(reply.timestamp).toLocaleTimeString() : 'Unknown time';
+                        
+                        conversationHtml += `
+                            <div class="message ${isAdmin ? 'admin-message' : 'user-message'}">
+                                <div class="message-author">${isAdmin ? 'Admin' : (reply.author || 'User')}</div>
+                                <div class="message-content">${reply.message || 'No message content'}</div>
+                                <div class="message-time">${replyTime}</div>
                             </div>
-                            <button class="reply-btn">Send Reply</button>
+                        `;
+                    });
+                }
+                
+                // Show ticket details with real data
+                ticketDetails.innerHTML = `
+                    <div class="active-ticket">
+                        <div class="ticket-info-header">
+                            <h3 class="ticket-info-title">Ticket #${ticketId.slice(-8)}</h3>
+                            <div class="ticket-info-meta">
+                                <span>Status: <span class="ticket-status-display ${ticketData.status || 'open'}">${ticketData.status || 'Open'}</span></span>
+                                <span>Created: ${createdDate}</span>
+                                <span>From: ${ticketData.userEmail || 'Unknown'}</span>
+                            </div>
+                            ${ticketData.subject ? `<div class="ticket-subject-display"><strong>Subject:</strong> ${ticketData.subject}</div>` : ''}
+                        </div>
+                        <div class="conversation">
+                            ${conversationHtml}
+                        </div>
+                        <div class="reply-form">
+                            <textarea class="reply-textarea" placeholder="Type your reply here..."></textarea>
+                            <div class="reply-form-actions">
+                                <div class="status-controls">
+                                    <select class="status-select" id="ticket-status-${ticketId}" onchange="updateTicketStatus('${ticketId}')">
+                                        <option value="open" ${ticketData.status === 'open' ? 'selected' : ''}>Open</option>
+                                        <option value="in_progress" ${ticketData.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                                        <option value="resolved" ${ticketData.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                                        <option value="closed" ${ticketData.status === 'closed' ? 'selected' : ''}>Closed</option>
+                                    </select>
+                                </div>
+                                <button class="reply-btn" onclick="sendReply('${ticketId}')">Send Reply</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+                
+            } catch (error) {
+                console.error('Error loading ticket details:', error);
+                ticketDetails.innerHTML = '<div class="loading-message">Error loading ticket details</div>';
+            }
+        }
+
+        async function updateTicketStatus(ticketId) {
+            const statusSelect = document.getElementById(`ticket-status-${ticketId}`);
+            const newStatus = statusSelect.value;
+            
+            try {
+                // Update status in Firebase
+                await database.ref(`support_tickets/${ticketId}`).update({
+                    status: newStatus,
+                    lastUpdated: new Date().toISOString(),
+                    statusUpdatedBy: 'admin'
+                });
+                
+                // Reload the ticket details to show updated status
+                await selectTicket(ticketId);
+                
+                // Refresh the tickets list to show updated status
+                await loadSupportTickets();
+                
+                // Show notification with color-coded message
+                const statusMessages = {
+                    'open': 'Ticket reopened',
+                    'in_progress': 'Ticket marked as in progress',
+                    'resolved': 'Ticket marked as resolved',
+                    'closed': 'Ticket closed'
+                };
+                
+                showNotification(statusMessages[newStatus] || 'Status updated');
+                
+            } catch (error) {
+                console.error('Error updating ticket status:', error);
+                showDialog('Error', 'Failed to update ticket status. Please try again.');
+            }
+        }
+
+        async function sendReply(ticketId) {
+            const replyTextarea = document.querySelector('.reply-textarea');
+            const replyBtn = document.querySelector('.reply-btn');
+            
+            const replyMessage = replyTextarea.value.trim();
+            
+            if (!replyMessage) {
+                showDialog('Error', 'Please enter a reply message.');
+                return;
+            }
+            
+            try {
+                replyBtn.disabled = true;
+                replyBtn.textContent = 'Sending...';
+                
+                // Get current ticket data
+                const ticketSnapshot = await database.ref(`support_tickets/${ticketId}`).once('value');
+                const ticketData = ticketSnapshot.val();
+                
+                if (!ticketData) {
+                    showDialog('Error', 'Ticket not found.');
+                    return;
+                }
+                
+                // Create reply object
+                const reply = {
+                    message: replyMessage,
+                    timestamp: new Date().toISOString(),
+                    isAdmin: true,
+                    author: 'admin'
+                };
+                
+                // Add reply to existing replies array
+                const currentReplies = ticketData.replies || [];
+                currentReplies.push(reply);
+                
+                // Update ticket with reply only (status is handled separately)
+                await database.ref(`support_tickets/${ticketId}`).update({
+                    replies: currentReplies,
+                    lastUpdated: new Date().toISOString()
+                });
+                
+                // Clear the textarea
+                replyTextarea.value = '';
+                
+                // Reload the ticket details to show the new reply
+                await selectTicket(ticketId);
+                
+                // Refresh the tickets list
+                await loadSupportTickets();
+                
+                showNotification('Reply sent successfully!');
+                
+            } catch (error) {
+                console.error('Error sending reply:', error);
+                showDialog('Error', 'Failed to send reply. Please try again.');
+            } finally {
+                replyBtn.disabled = false;
+                replyBtn.textContent = 'Send Reply';
+            }
         }
 
 
