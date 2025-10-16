@@ -101,7 +101,7 @@
             text-decoration: none;
             display: inline-block;
         }
-
+        
         .hub-btn:hover {
             background: #1e3d1e;
             transform: translateY(-1px);
@@ -112,7 +112,7 @@
             color: #2d5a2d;
             border: 1px solid #2d5a2d;
         }
-
+        
         .hub-btn.secondary:hover {
             background: #2d5a2d;
             color: #ffffff;
@@ -161,7 +161,7 @@
             align-items: center;
             margin-bottom: 20px;
         }
-
+        
         .quick-actions h3 {
             color: #ffffff;
             font-size: 1.1rem;
@@ -736,6 +736,109 @@
             border-color: #2d5a2d;
         }
 
+        /* Users List Styles */
+        .users-list-section {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .users-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .users-list-header h4 {
+            color: #2d5a2d;
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 400;
+        }
+
+        .users-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        .users-stats strong {
+            color: #ffffff;
+        }
+
+        .users-list-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .user-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .user-status-indicator.online {
+            background: #2d5a2d;
+            box-shadow: 0 0 6px rgba(45, 90, 45, 0.5);
+        }
+
+        .user-status-indicator.offline {
+            background: #8b0000;
+            box-shadow: 0 0 6px rgba(139, 0, 0, 0.5);
+        }
+
+        .user-name {
+            color: #ffffff;
+            font-weight: 500;
+            min-width: 150px;
+        }
+
+        .user-session-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .user-email {
+            color: #888888;
+            font-size: 12px;
+        }
+
+        .session-stats {
+            color: #666666;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
         .reply-form-actions {
             display: flex;
             justify-content: space-between;
@@ -793,7 +896,7 @@
                 transform: translateY(0) scale(1);
             }
         }
-
+        
         @media (max-width: 768px) {
             .hub-header {
                 flex-direction: column;
@@ -872,7 +975,7 @@
         <!-- Quick Actions -->
         <div class="quick-actions">
             <div class="quick-actions-header">
-                <h3>Quick Actions</h3>
+            <h3>Quick Actions</h3>
                 <button class="hub-btn support-center-btn" onclick="openSupportCenter()">📧 Support Center</button>
             </div>
             <div class="quick-buttons">
@@ -890,28 +993,32 @@
                 <h3>User Management</h3>
                 <p>Manage pilot accounts, view user activity, and handle account issues.</p>
                 <div class="hub-actions">
-                    <button class="hub-btn" onclick="viewUsers()">View Users</button>
+                    <button class="hub-btn" onclick="toggleUsersList()">Toggle Users List</button>
                     <button class="hub-btn secondary" onclick="userAnalytics()">Analytics</button>
                 </div>
             </div>
 
-            <!-- Flight Data -->
-            <div class="hub-card">
-                <h3>Flight Data</h3>
-                <p>Monitor real-time flight tracking and pilot activity across the network.</p>
-                <div class="hub-actions">
-                    <button class="hub-btn" onclick="viewFlights()">Live Flights</button>
+            <!-- Users List (Hidden by default) -->
+            <div class="users-list-section" id="users-list-section" style="display: none;">
+                <div class="users-list-header">
+                    <h4>Registered Users</h4>
+                    <div class="users-stats">
+                        <span>Total: <strong id="users-total">--</strong></span>
+                        <span>Online: <strong id="users-online">--</strong></span>
+                </div>
+            </div>
+                <div class="users-list-container" id="users-list-container">
+                    <div class="loading-message">Click "Toggle Users List" to load users...</div>
                 </div>
             </div>
 
-
-            <!-- App Analytics -->
+            <!-- Session Analytics -->
             <div class="hub-card">
-                <h3>App Analytics</h3>
-                <p>Track app performance, download statistics, and user engagement metrics.</p>
+                <h3>Session Analytics</h3>
+                <p>Track user session times, activity patterns, and engagement metrics.</p>
                 <div class="hub-actions">
-                    <button class="hub-btn" onclick="viewAnalytics()">View Analytics</button>
-                    <button class="hub-btn secondary" onclick="generateReport()">Generate Report</button>
+                    <button class="hub-btn" onclick="viewSessionAnalytics()">View Sessions</button>
+                    <button class="hub-btn secondary" onclick="exportSessionData()">Export Data</button>
                 </div>
             </div>
 
@@ -925,8 +1032,8 @@
                 </div>
             </div>
 
-        </div>
-    </div>
+                </div>
+            </div>
 
     <!-- Custom Dialog System -->
     <div id="custom-dialog" class="dialog-overlay" style="display: none;">
@@ -1098,6 +1205,175 @@
             }
         });
 
+        // Load download count from FlightSim.to
+        async function loadDownloadCount() {
+            try {
+                // Try to fetch from FlightSim.to using CORS proxy
+                const proxyUrl = 'https://api.allorigins.win/get?url=';
+                const targetUrl = 'https://flightsim.to/file/98739/airjb-mouse-controlled-virtual-joystick-msfs';
+                
+                const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+                const data = await response.json();
+                
+                if (data.contents) {
+                    // Parse the HTML to find download count
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(data.contents, 'text/html');
+                    
+                    // Look for download count in various possible selectors
+                    const downloadSelectors = [
+                        '.download-count',
+                        '.downloads',
+                        '[data-downloads]',
+                        '.stats .number',
+                        '.file-stats .count'
+                    ];
+                    
+                    let downloadCount = null;
+                    
+                    // Try to find download count in the page
+                    for (const selector of downloadSelectors) {
+                        const element = doc.querySelector(selector);
+                        if (element) {
+                            const text = element.textContent.trim();
+                            const match = text.match(/(\d+)/);
+                            if (match) {
+                                downloadCount = parseInt(match[1]);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If we found a count, use it
+                    if (downloadCount !== null) {
+                        document.getElementById('total-downloads').textContent = downloadCount.toLocaleString();
+                        // Store in Firebase for caching
+                        await database.ref('app_stats/download_count').set(downloadCount);
+                        await database.ref('app_stats/last_updated').set(Date.now());
+                        return;
+                    }
+                }
+                
+                // Fallback to Firebase cache
+                await loadDownloadCountFromFirebase();
+                
+            } catch (error) {
+                console.error('Error fetching download count from FlightSim.to:', error);
+                // Fallback to Firebase cache
+                await loadDownloadCountFromFirebase();
+            }
+        }
+        
+        // Fallback function to load from Firebase cache
+        async function loadDownloadCountFromFirebase() {
+            try {
+                const downloadSnapshot = await database.ref('app_stats/download_count').once('value');
+                const downloadCount = downloadSnapshot.val();
+                
+                if (downloadCount !== null) {
+                    document.getElementById('total-downloads').textContent = downloadCount.toLocaleString();
+                } else {
+                    // Final fallback - check if there's a manual count set by admin
+                    document.getElementById('total-downloads').textContent = '39';
+                    await database.ref('app_stats/download_count').set(39);
+                }
+            } catch (error) {
+                console.error('Error loading download count from Firebase:', error);
+                document.getElementById('total-downloads').textContent = '39';
+            }
+        }
+
+        // Session logging system
+        async function logUserSession(userId, sessionStart, sessionEnd) {
+            try {
+                const sessionDuration = sessionEnd - sessionStart;
+                const sessionMinutes = Math.floor(sessionDuration / (1000 * 60));
+                const sessionHours = Math.floor(sessionMinutes / 60);
+                const remainingMinutes = sessionMinutes % 60;
+                
+                // Create session log entry
+                const sessionId = 'session_' + Date.now();
+                const sessionData = {
+                    userId: userId,
+                    startTime: sessionStart,
+                    endTime: sessionEnd,
+                    duration: sessionDuration,
+                    durationMinutes: sessionMinutes,
+                    durationFormatted: `${sessionHours}h ${remainingMinutes}m`,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Save session log
+                await database.ref(`session_logs/${sessionId}`).set(sessionData);
+                
+                // Update user's total session time
+                const userRef = database.ref(`pilots/${userId}`);
+                const userSnapshot = await userRef.once('value');
+                const userData = userSnapshot.val() || {};
+                
+                const currentTotalMinutes = userData.totalSessionMinutes || 0;
+                const newTotalMinutes = currentTotalMinutes + sessionMinutes;
+                const newTotalHours = Math.floor(newTotalMinutes / 60);
+                const newRemainingMinutes = newTotalMinutes % 60;
+                
+                // Update user data
+                await userRef.update({
+                    totalSessionMinutes: newTotalMinutes,
+                    totalSessionTime: `${newTotalHours}h ${newRemainingMinutes}m`,
+                    lastSessionDuration: sessionData.durationFormatted,
+                    lastSessionEnd: sessionEnd,
+                    sessionCount: (userData.sessionCount || 0) + 1
+                });
+                
+                console.log(`Session logged for user ${userId}: ${sessionData.durationFormatted}`);
+                
+            } catch (error) {
+                console.error('Error logging user session:', error);
+            }
+        }
+        
+        // Monitor user sessions (call this when users go offline)
+        async function handleUserOffline(userId) {
+            try {
+                const userRef = database.ref(`pilots/${userId}`);
+                const userSnapshot = await userRef.once('value');
+                const userData = userSnapshot.val();
+                
+                if (userData && userData.sessionStartTime) {
+                    const sessionStart = userData.sessionStartTime;
+                    const sessionEnd = Date.now();
+                    
+                    // Only log sessions longer than 1 minute
+                    if (sessionEnd - sessionStart > 60000) {
+                        await logUserSession(userId, sessionStart, sessionEnd);
+                    }
+                    
+                    // Clear session start time
+                    await userRef.update({
+                        sessionStartTime: null,
+                        isOnline: false,
+                        lastSeen: sessionEnd
+                    });
+                }
+            } catch (error) {
+                console.error('Error handling user offline:', error);
+            }
+        }
+        
+        // Start session tracking for a user (call when they come online)
+        async function handleUserOnline(userId) {
+            try {
+                const userRef = database.ref(`pilots/${userId}`);
+                await userRef.update({
+                    sessionStartTime: Date.now(),
+                    isOnline: true,
+                    lastSeen: Date.now()
+                });
+            } catch (error) {
+                console.error('Error handling user online:', error);
+            }
+        }
+
         // Load dashboard data
         async function loadDashboardData() {
             try {
@@ -1122,8 +1398,8 @@
                 const openTickets = Object.values(ticketsData).filter(ticket => ticket.status === 'open').length;
                 document.getElementById('support-tickets').textContent = openTickets;
                 
-                // Mock download count (you can replace with real data)
-                document.getElementById('total-downloads').textContent = '1,247';
+                // Load download count
+                loadDownloadCount();
                 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
@@ -1187,6 +1463,74 @@
         }
 
         // Management functions
+        function toggleUsersList() {
+            const usersSection = document.getElementById('users-list-section');
+            const isVisible = usersSection.style.display !== 'none';
+            
+            if (isVisible) {
+                usersSection.style.display = 'none';
+            } else {
+                usersSection.style.display = 'block';
+                loadUsersListInline();
+            }
+        }
+
+        async function loadUsersListInline() {
+            const container = document.getElementById('users-list-container');
+            const totalElement = document.getElementById('users-total');
+            const onlineElement = document.getElementById('users-online');
+            
+            container.innerHTML = '<div class="loading-message">Loading users...</div>';
+            
+            try {
+                const usersSnapshot = await database.ref('pilots').once('value');
+                const usersData = usersSnapshot.val() || {};
+                const users = Object.entries(usersData);
+                
+                if (users.length === 0) {
+                    container.innerHTML = '<div class="loading-message">No users found</div>';
+                    totalElement.textContent = '0';
+                    onlineElement.textContent = '0';
+                    return;
+                }
+                
+                // Calculate online users (using timestamp-based logic)
+                const now = Date.now();
+                const onlineThreshold = 5 * 60 * 1000; // 5 minutes
+                let onlineCount = 0;
+                
+                const usersList = users.map(([userId, userData]) => {
+                    const isOnline = userData.isOnline && userData.lastSeen && (now - userData.lastSeen) < onlineThreshold;
+                    if (isOnline) onlineCount++;
+                    
+                    const totalSessionTime = userData.totalSessionTime || '0h 0m';
+                    const sessionCount = userData.sessionCount || 0;
+                    const lastSession = userData.lastSessionDuration || 'N/A';
+                    
+                    return `
+                        <div class="user-item">
+                            <div class="user-status-indicator ${isOnline ? 'online' : 'offline'}"></div>
+                            <div class="user-name">${userData.displayName || userData.email || 'Unknown User'}</div>
+                            <div class="user-session-info">
+                                <div class="user-email">${userData.email || ''}</div>
+                                <div class="session-stats">Total: ${totalSessionTime} • Sessions: ${sessionCount} • Last: ${lastSession}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                container.innerHTML = usersList;
+                totalElement.textContent = users.length;
+                onlineElement.textContent = onlineCount;
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                container.innerHTML = '<div class="loading-message">Error loading users</div>';
+                totalElement.textContent = '--';
+                onlineElement.textContent = '--';
+            }
+        }
+
         async function viewUsers() {
             const modal = document.getElementById('user-management-modal');
             const userList = document.getElementById('user-list');
@@ -1242,8 +1586,12 @@
             showDialog('User Analytics', 'Detailed user analytics and engagement metrics are coming soon!');
         }
 
-        function viewFlights() {
-            showDialog('Live Flight Tracking', 'Real-time flight tracking interface is coming soon!');
+        function viewSessionAnalytics() {
+            showDialog('Session Analytics', 'Detailed session analytics and user activity tracking is coming soon!');
+        }
+
+        function exportSessionData() {
+            showDialog('Export Session Data', 'Session data export functionality is coming soon!');
         }
 
         async function viewTickets() {
@@ -1310,6 +1658,92 @@
             showDialog('Ticket Details', `Detailed ticket view for #${ticketId.slice(-8)} is coming soon!`);
         }
 
+        function openSupportCenter() {
+            const modal = document.getElementById('support-center-modal');
+            modal.style.display = 'flex';
+            loadSupportTickets();
+        }
+
+        async function loadSupportTickets() {
+            const ticketsList = document.getElementById('tickets-list');
+            const openTicketsCount = document.getElementById('open-tickets-count');
+            const totalTicketsCount = document.getElementById('total-tickets-count');
+            
+            try {
+                const ticketsSnapshot = await database.ref('support_tickets').once('value');
+                const ticketsData = ticketsSnapshot.val() || {};
+                const tickets = Object.entries(ticketsData);
+                
+                totalTicketsCount.textContent = tickets.length;
+                const openCount = tickets.filter(([_, ticket]) => ticket.status === 'open').length;
+                openTicketsCount.textContent = openCount;
+                
+                if (tickets.length === 0) {
+                    ticketsList.innerHTML = '<div class="loading-message">No support tickets found</div>';
+                } else {
+                    ticketsList.innerHTML = tickets.map(([ticketId, ticket]) => `
+                        <div class="ticket-item" onclick="selectTicket('${ticketId}')">
+                            <div class="ticket-header">
+                                <span class="ticket-id">#${ticketId.slice(-8)}</span>
+                                <span class="ticket-status ${ticket.status || 'open'}">${ticket.status || 'open'}</span>
+                            </div>
+                            <div class="ticket-subject">${ticket.subject || 'No Subject'}</div>
+                            <div class="ticket-preview">${ticket.message ? ticket.message.substring(0, 60) + '...' : 'No message'}</div>
+                            <div class="ticket-meta">
+                                <span>${ticket.userEmail || 'Unknown'}</span>
+                                <span>${ticket.timestamp ? new Date(ticket.timestamp).toLocaleDateString() : 'Unknown date'}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading tickets:', error);
+                ticketsList.innerHTML = '<div class="loading-message">Error loading tickets</div>';
+            }
+        }
+
+        function selectTicket(ticketId) {
+            // Remove previous selection
+            document.querySelectorAll('.ticket-item').forEach(item => item.classList.remove('selected'));
+            // Add selection to clicked item
+            event.target.closest('.ticket-item').classList.add('selected');
+            
+            // Show ticket details (placeholder for now)
+            const ticketDetails = document.getElementById('ticket-details');
+            ticketDetails.innerHTML = `
+                <div class="active-ticket">
+                    <div class="ticket-info-header">
+                        <h3 class="ticket-info-title">Ticket #${ticketId.slice(-8)}</h3>
+                        <div class="ticket-info-meta">
+                            <span>Status: Open</span>
+                            <span>Created: Today</span>
+                        </div>
+                    </div>
+                    <div class="conversation">
+                        <div class="message user-message">
+                            <div class="message-author">User</div>
+                            <div class="message-content">This is a sample message from the user...</div>
+                            <div class="message-time">2:30 PM</div>
+                        </div>
+                    </div>
+                    <div class="reply-form">
+                        <textarea class="reply-textarea" placeholder="Type your reply here..."></textarea>
+                        <div class="reply-form-actions">
+                            <div class="status-controls">
+                                <select class="status-select">
+                                    <option value="open">Open</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="resolved">Resolved</option>
+                                    <option value="closed">Closed</option>
+                                </select>
+                            </div>
+                            <button class="reply-btn">Send Reply</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
 
         // Quick action functions
         function refreshData() {
@@ -1335,8 +1769,8 @@
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: #00ff88;
-                color: #000000;
+                background: #2d5a2d;
+                color: #ffffff;
                 padding: 15px 20px;
                 border-radius: 4px;
                 font-family: 'Josefin Sans', sans-serif;
@@ -1358,10 +1792,10 @@
             
             try {
                 await auth.signOut();
-                localStorage.removeItem('airjb-admin-auth');
-                localStorage.removeItem('airjb-admin-auth-expiry');
+            localStorage.removeItem('airjb-admin-auth');
+            localStorage.removeItem('airjb-admin-auth-expiry');
                 localStorage.removeItem('airjb-admin-uid');
-                window.location.href = 'index.html';
+            window.location.href = 'index.html';
             } catch (error) {
                 console.error('Logout error:', error);
                 // Force redirect even if logout fails
