@@ -1422,16 +1422,12 @@
                 document.getElementById('total-users').textContent = Object.keys(pilotsData).length;
                 
                 // Count active pilots (online with recent activity)
-                const now = Date.now();
-                const onlineThreshold = 5 * 60 * 1000; // 5 minutes
+                const now = new Date();
+                const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
                 const activePilots = Object.values(pilotsData).filter(pilot => {
                     if (!pilot.isOnline) return false;
-                    if (pilot.lastSeen) {
-                        return (now - pilot.lastSeen) < onlineThreshold;
-                    } else {
-                        // Fallback for old data - if isOnline is true but no lastSeen
-                        return true;
-                    }
+                    if (!pilot.lastSeen) return pilot.isOnline; // Fallback for old data
+                    return new Date(pilot.lastSeen) > fiveMinutesAgo;
                 }).length;
                 document.getElementById('active-pilots').textContent = activePilots;
                 
@@ -1538,32 +1534,17 @@
                 }
                 
                 // Calculate online users (using timestamp-based logic)
-                const now = Date.now();
-                const onlineThreshold = 5 * 60 * 1000; // 5 minutes
+                const now = new Date();
+                const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
                 let onlineCount = 0;
                 
                 const usersList = users.map(([userId, userData]) => {
-                    // More flexible online detection
-                    let isOnline = false;
-                    
-                    if (userData.isOnline) {
-                        if (userData.lastSeen) {
-                            // If lastSeen exists, check if it's within threshold
-                            isOnline = (now - userData.lastSeen) < onlineThreshold;
-                        } else {
-                            // If no lastSeen but isOnline is true, consider online (fallback for older data)
-                            isOnline = true;
-                        }
-                    }
-                    
+                    const isOnline = userData.isOnline && (!userData.lastSeen || new Date(userData.lastSeen) > fiveMinutesAgo);
                     if (isOnline) onlineCount++;
                     
                     const totalSessionTime = userData.totalSessionTime || '0h 0m';
                     const sessionCount = userData.sessionCount || 0;
                     const lastSession = userData.lastSessionDuration || 'N/A';
-                    
-                    // Debug info (you can remove this later)
-                    console.log(`User ${userData.displayName || userData.email}: isOnline=${userData.isOnline}, lastSeen=${userData.lastSeen}, calculated=${isOnline}`);
                     
                     return `
                         <div class="user-item">
