@@ -706,8 +706,8 @@
         }
 
         .message.user-message {
-            background: rgba(33, 150, 243, 0.1);
-            border-left: 3px solid #2196F3;
+            background: rgba(45, 90, 45, 0.1);
+            border-left: 3px solid #2d5a2d;
             margin-left: auto;
             border-radius: 8px 0 8px 8px;
         }
@@ -726,7 +726,7 @@
         }
 
         .user-message .message-author {
-            color: #2196F3;
+            color: #2d5a2d;
         }
 
         .admin-message .message-author {
@@ -1236,6 +1236,9 @@
                 // Load users list since it's shown by default
                 loadUsersListInline();
                 
+                // Start monitoring user sessions
+                startSessionMonitoring();
+                
             } catch (error) {
                 console.error('Error verifying admin:', error);
                 await auth.signOut();
@@ -1399,17 +1402,145 @@
             }
         }
         
-        // Start session tracking for a user (call when they come online)
-        async function handleUserOnline(userId) {
+        // Session monitoring system
+        let sessionMonitoringActive = false;
+        let userStatusCache = new Map(); // Track previous online status
+        
+        function startSessionMonitoring() {
+            if (sessionMonitoringActive) return;
+            sessionMonitoringActive = true;
+            
+            console.log('🔍 Starting session monitoring system...');
+            
+            // Monitor every 30 seconds
+            setInterval(async () => {
+                await checkForSessionChanges();
+            }, 30000);
+            
+            // Initial check
+            checkForSessionChanges();
+        }
+        
+        async function checkForSessionChanges() {
+            try {
+                const pilotsSnapshot = await database.ref('pilots').once('value');
+                const pilotsData = pilotsSnapshot.val() || {};
+                
+                const now = Date.now();
+                const onlineThreshold = 2 * 60 * 1000; // 2 minutes to be more responsive
+                
+                for (const [userId, userData] of Object.entries(pilotsData)) {
+                    const wasOnline = userStatusCache.get(userId) || false;
+                    
+                    // Determine current online status
+                    let isCurrentlyOnline = false;
+                    if (userData.isOnline) {
+                        if (userData.lastSeen) {
+                            const lastSeenTime = new Date(userData.lastSeen).getTime();
+                            isCurrentlyOnline = (now - lastSeenTime) < onlineThreshold;
+                        } else {
+                            isCurrentlyOnline = true; // Fallback for old data
+                        }
+                    }
+                    
+                    // Detect status changes
+                    if (!wasOnline && isCurrentlyOnline) {
+                        // User came online - start new session
+                        await handleUserCameOnline(userId, userData);
+                        console.log(`✅ User ${userData.callsign || userData.email} came online`);
+                    } else if (wasOnline && !isCurrentlyOnline) {
+                        // User went offline - end session
+                        await handleUserWentOffline(userId, userData);
+                        console.log(`❌ User ${userData.callsign || userData.email} went offline`);
+                    }
+                    
+                    // Update cache
+                    userStatusCache.set(userId, isCurrentlyOnline);
+                }
+                
+            } catch (error) {
+                console.error('Error checking session changes:', error);
+            }
+        }
+        
+        async function handleUserCameOnline(userId, userData) {
             try {
                 const userRef = database.ref(`pilots/${userId}`);
-                await userRef.update({
-                    sessionStartTime: Date.now(),
+                const sessionStartTime = Date.now();
+                
+                // Initialize session tracking data if not exists
+                const updates = {
+                    sessionStartTime: sessionStartTime,
                     isOnline: true,
-                    lastSeen: Date.now()
-                });
+                    lastSeen: sessionStartTime
+                };
+                
+                // Initialize session stats if they don't exist
+                if (!userData.totalSessionMinutes) {
+                    updates.totalSessionMinutes = 0;
+                    updates.totalSessionTime = '0h 0m';
+                    updates.sessionCount = 0;
+                }
+                
+                await userRef.update(updates);
+                
             } catch (error) {
-                console.error('Error handling user online:', error);
+                console.error('Error handling user came online:', error);
+            }
+        }
+        
+        async function handleUserWentOffline(userId, userData) {
+            try {
+                const userRef = database.ref(`pilots/${userId}`);
+                const sessionEndTime = Date.now();
+                
+                // Calculate session duration if we have a start time
+                if (userData.sessionStartTime) {
+                    const sessionDuration = sessionEndTime - userData.sessionStartTime;
+                    const sessionMinutes = Math.floor(sessionDuration / (1000 * 60));
+                    
+                    // Only log sessions longer than 1 minute
+                    if (sessionMinutes >= 1) {
+                        await logUserSession(userId, userData.sessionStartTime, sessionEndTime);
+                        
+                        // Update user's total session time
+                        const currentTotalMinutes = userData.totalSessionMinutes || 0;
+                        const newTotalMinutes = currentTotalMinutes + sessionMinutes;
+                        const newTotalHours = Math.floor(newTotalMinutes / 60);
+                        const newRemainingMinutes = newTotalMinutes % 60;
+                        
+                        const sessionHours = Math.floor(sessionMinutes / 60);
+                        const sessionRemainingMinutes = sessionMinutes % 60;
+                        
+                        await userRef.update({
+                            totalSessionMinutes: newTotalMinutes,
+                            totalSessionTime: `${newTotalHours}h ${newRemainingMinutes}m`,
+                            lastSessionDuration: `${sessionHours}h ${sessionRemainingMinutes}m`,
+                            sessionCount: (userData.sessionCount || 0) + 1,
+                            sessionStartTime: null,
+                            isOnline: false,
+                            lastSeen: sessionEndTime
+                        });
+                        
+                        console.log(`📊 Session logged: ${sessionHours}h ${sessionRemainingMinutes}m for ${userData.callsign || userData.email}`);
+                    } else {
+                        // Just mark offline without logging short session
+                        await userRef.update({
+                            sessionStartTime: null,
+                            isOnline: false,
+                            lastSeen: sessionEndTime
+                        });
+                    }
+                } else {
+                    // No session start time, just mark offline
+                    await userRef.update({
+                        isOnline: false,
+                        lastSeen: sessionEndTime
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error handling user went offline:', error);
             }
         }
 
@@ -1778,22 +1909,37 @@
                     </div>
                 `;
                 
-                // Add any replies
-                if (ticketData.replies && Array.isArray(ticketData.replies)) {
-                    ticketData.replies.forEach(reply => {
-                        const isAdmin = reply.isAdmin || reply.author === 'admin';
-                        const replyTime = reply.timestamp ? 
-                            new Date(reply.timestamp).toLocaleTimeString() : 'Unknown time';
-                        
+                // Add numbered replies (0, 1, 2, etc.)
+                const replies = [];
+                let replyIndex = 0;
+                while (ticketData[replyIndex.toString()]) {
+                    replies.push({
+                        index: replyIndex,
+                        data: ticketData[replyIndex.toString()]
+                    });
+                    replyIndex++;
+                }
+                
+                // Sort replies by index to ensure proper order
+                replies.sort((a, b) => a.index - b.index);
+                
+                replies.forEach(reply => {
+                    const replyData = reply.data;
+                    const isAdmin = replyData.author === 'Support Team';
+                    const isPending = replyData.message === 'Pending reply...';
+                    const replyTime = replyData.timestamp && replyData.timestamp !== '1970-01-01T00:00:00.000Z' ? 
+                        new Date(replyData.timestamp).toLocaleTimeString() : 'Pending...';
+                    
+                    if (!isPending) { // Don't show pending placeholders in admin view
                         conversationHtml += `
                             <div class="message ${isAdmin ? 'admin-message' : 'user-message'}">
-                                <div class="message-author">${isAdmin ? 'Admin' : (reply.author || 'User')}</div>
-                                <div class="message-content">${reply.message || 'No message content'}</div>
+                                <div class="message-author">${replyData.author || 'User'}</div>
+                                <div class="message-content">${replyData.message || 'No message content'}</div>
                                 <div class="message-time">${replyTime}</div>
                             </div>
                         `;
-                    });
-                }
+                    }
+                });
                 
                 // Show ticket details with real data
                 ticketDetails.innerHTML = `
@@ -1891,21 +2037,39 @@
                     return;
                 }
                 
-                // Create reply object
-                const reply = {
-                    message: replyMessage,
-                    timestamp: new Date().toISOString(),
-                    isAdmin: true,
-                    author: 'admin'
-                };
+                // Find the next reply index by checking existing numbered replies
+                let nextReplyIndex = 0;
+                while (ticketData[nextReplyIndex.toString()]) {
+                    nextReplyIndex++;
+                }
                 
-                // Add reply to existing replies array
-                const currentReplies = ticketData.replies || [];
-                currentReplies.push(reply);
+                // Check if there's a pending placeholder to replace
+                let hasPendingPlaceholder = false;
+                for (let i = 0; i < nextReplyIndex; i++) {
+                    const reply = ticketData[i.toString()];
+                    if (reply && reply.author === 'Support Team' && reply.message === 'Pending reply...') {
+                        // Replace the pending placeholder
+                        await database.ref(`support_tickets/${ticketId}/${i}`).update({
+                            message: replyMessage,
+                            timestamp: new Date().toISOString(),
+                            author: 'Support Team'
+                        });
+                        hasPendingPlaceholder = true;
+                        break;
+                    }
+                }
                 
-                // Update ticket with reply only (status is handled separately)
+                // If no pending placeholder found, create new reply
+                if (!hasPendingPlaceholder) {
+                    await database.ref(`support_tickets/${ticketId}/${nextReplyIndex}`).set({
+                        message: replyMessage,
+                        timestamp: new Date().toISOString(),
+                        author: 'Support Team'
+                    });
+                }
+                
+                // Update ticket metadata
                 await database.ref(`support_tickets/${ticketId}`).update({
-                    replies: currentReplies,
                     lastUpdated: new Date().toISOString()
                 });
                 
