@@ -965,7 +965,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>AirJB</h1>
-                <span class="tagline">AtyoursTruly v2.0</span>
+                <span class="tagline">AtyoursTruly v2.1</span>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
@@ -1873,15 +1873,23 @@
                 
                 // Check if there's a pending placeholder to replace
                 let hasPendingPlaceholder = false;
+                console.log('Checking for placeholders, nextReplyIndex:', nextReplyIndex);
+                
                 for (let i = 0; i < nextReplyIndex; i++) {
                     const reply = ticketData[i.toString()];
+                    console.log(`Reply ${i}:`, reply);
+                    
                     if (reply && reply.author === 'Support Team') {
                         // Check for any type of placeholder message
                         const isPlaceholder = reply.message === 'Pending reply...' || 
-                                            reply.message.includes('Thanks for contacting AirJB support') ||
+                                            reply.message.startsWith('Thanks for contacting AirJB') ||
+                                            reply.message.startsWith('Thanks for contacting AirJB') ||
                                             reply.timestamp === '1970-01-01T00:00:00.000Z';
                         
+                        console.log(`Reply ${i} is placeholder:`, isPlaceholder, 'Message:', reply.message);
+                        
                         if (isPlaceholder) {
+                            console.log('Replacing placeholder at index:', i);
                             // Replace the pending placeholder
                             await database.ref(`support_tickets/${ticketId}/${i}`).update({
                                 message: replyMessage,
@@ -1893,6 +1901,8 @@
                         }
                     }
                 }
+                
+                console.log('hasPendingPlaceholder:', hasPendingPlaceholder);
                 
                 // If no pending placeholder found, create new reply
                 if (!hasPendingPlaceholder) {
