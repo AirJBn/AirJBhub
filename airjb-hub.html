@@ -891,6 +891,23 @@
             font-size: 12px;
         }
 
+        .delete-ticket-btn {
+            background: #8b0000;
+            color: #ffffff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-left: 10px;
+        }
+
+        .delete-ticket-btn:hover {
+            background: #a00000;
+        }
+
         .reply-btn {
             background: #2d5a2d;
             color: #ffffff;
@@ -1841,6 +1858,7 @@
                                         <option value="resolved" ${ticketData.status === 'resolved' ? 'selected' : ''}>Resolved</option>
                                         <option value="closed" ${ticketData.status === 'closed' ? 'selected' : ''}>Closed</option>
                                     </select>
+                                    <button class="delete-ticket-btn" onclick="deleteTicket('${ticketId}')">🗑️ Delete</button>
                                 </div>
                                 <button class="reply-btn" onclick="sendReply('${ticketId}')">Send Reply</button>
                             </div>
@@ -1895,6 +1913,47 @@
                 sendReply(ticketId);
             }
             // If Shift+Enter, allow default behavior (new line)
+        }
+
+        async function deleteTicket(ticketId) {
+            // Confirm deletion
+            const confirmDelete = await showDialog(
+                'Delete Ticket',
+                'Are you sure you want to permanently delete this ticket? This action cannot be undone.',
+                true
+            );
+            
+            if (!confirmDelete) {
+                return;
+            }
+            
+            try {
+                // Delete the ticket from Firebase
+                await database.ref(`support_tickets/${ticketId}`).remove();
+                
+                // Clear the ticket details view
+                const ticketDetails = document.getElementById('ticket-details');
+                ticketDetails.innerHTML = `
+                    <div class="no-ticket-selected">
+                        <div class="no-ticket-icon">✅</div>
+                        <h4>Ticket Deleted</h4>
+                        <p>The ticket has been permanently deleted.</p>
+                    </div>
+                `;
+                
+                // Clean up listener
+                if (currentTicketListener && currentTicketId === ticketId) {
+                    database.ref(`support_tickets/${ticketId}`).off('value', currentTicketListener);
+                    currentTicketListener = null;
+                    currentTicketId = null;
+                }
+                
+                showNotification('Ticket deleted successfully!');
+                
+            } catch (error) {
+                console.error('Error deleting ticket:', error);
+                showDialog('Error', 'Failed to delete ticket. Please try again.');
+            }
         }
 
         async function sendReply(ticketId) {
