@@ -982,7 +982,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>AirJB</h1>
-                <span class="tagline">AtyoursTruly v2.6</span>
+                <span class="tagline">AtyoursTruly v2.7</span>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
@@ -1091,6 +1091,33 @@
                     <div style="color: #888888; font-size: 11px; margin-bottom: 5px;">Current Message:</div>
                     <div id="announcement-text" style="color: #ffffff; font-size: 13px;"></div>
                     <div style="color: #888888; font-size: 11px; margin-top: 5px;">Status: <span id="announcement-status" style="color: #2d5a2d;">Loading...</span></div>
+                </div>
+            </div>
+
+            <!-- Survey Responses -->
+            <div class="hub-card">
+                <h3>Survey Responses</h3>
+                <p>View beta survey feedback from users.</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" onclick="viewSurveyResponses()">View Responses</button>
+                </div>
+                <div id="survey-summary" style="margin-top: 15px; padding: 10px; background: rgba(45, 90, 45, 0.1); border-left: 3px solid #2d5a2d; border-radius: 4px; display: none;">
+                    <div style="color: #888888; font-size: 11px; margin-bottom: 5px;">Summary:</div>
+                    <div id="survey-stats" style="color: #ffffff; font-size: 13px;"></div>
+                </div>
+            </div>
+
+            <!-- Remote App Control -->
+            <div class="hub-card">
+                <h3>Remote App Control</h3>
+                <p>Force close the app for all users (press & release).</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" style="background: #8b0000;" onmouseover="this.style.background='#a00000'" onmouseout="this.style.background='#8b0000'" onclick="pressCloseApp()">Force Close App</button>
+                    <button class="hub-btn secondary" onclick="editCloseMessage()">Edit Message</button>
+                </div>
+                <div id="close-app-status" style="margin-top: 15px; padding: 10px; background: rgba(139, 0, 0, 0.1); border-left: 3px solid #8b0000; border-radius: 4px; display: none;">
+                    <div style="color: #888888; font-size: 11px; margin-bottom: 5px;">Current Message:</div>
+                    <div id="close-app-info" style="color: #ffffff; font-size: 13px;"></div>
                 </div>
             </div>
 
@@ -1480,25 +1507,28 @@
                     if (aIsOnline && !bIsOnline) return -1;
                     if (!aIsOnline && bIsOnline) return 1;
                     
-                    // If both are offline, sort by lastSeen availability and time
-                    if (!aIsOnline && !bIsOnline) {
-                        const aHasLastSeen = aData.lastSeen && !isNaN(new Date(aData.lastSeen).getTime());
-                        const bHasLastSeen = bData.lastSeen && !isNaN(new Date(bData.lastSeen).getTime());
-                        
-                        // If one has lastSeen and the other doesn't, the one with lastSeen comes first
-                        if (aHasLastSeen && !bHasLastSeen) return -1;
-                        if (!aHasLastSeen && bHasLastSeen) return 1;
-                        
-                        // If both have lastSeen, sort by most recent
-                        if (aHasLastSeen && bHasLastSeen) {
-                            const aLastSeen = new Date(aData.lastSeen).getTime();
-                            const bLastSeen = new Date(bData.lastSeen).getTime();
-                            return bLastSeen - aLastSeen; // Most recent first
+                        // If both are offline, sort by lastSeen availability and time
+                        if (!aIsOnline && !bIsOnline) {
+                            const aLastSeenValue = aData.lastSeenTimestamp || aData.lastSeen;
+                            const bLastSeenValue = bData.lastSeenTimestamp || bData.lastSeen;
+                            
+                            const aHasLastSeen = aLastSeenValue && (typeof aLastSeenValue === 'number' ? true : !isNaN(new Date(aLastSeenValue).getTime()));
+                            const bHasLastSeen = bLastSeenValue && (typeof bLastSeenValue === 'number' ? true : !isNaN(new Date(bLastSeenValue).getTime()));
+                            
+                            // If one has lastSeen and the other doesn't, the one with lastSeen comes first
+                            if (aHasLastSeen && !bHasLastSeen) return -1;
+                            if (!aHasLastSeen && bHasLastSeen) return 1;
+                            
+                            // If both have lastSeen, sort by most recent
+                            if (aHasLastSeen && bHasLastSeen) {
+                                const aLastSeen = typeof aLastSeenValue === 'number' ? aLastSeenValue : new Date(aLastSeenValue).getTime();
+                                const bLastSeen = typeof bLastSeenValue === 'number' ? bLastSeenValue : new Date(bLastSeenValue).getTime();
+                                return bLastSeen - aLastSeen; // Most recent first
+                            }
+                            
+                            // Both have no lastSeen, keep original order
+                            return 0;
                         }
-                        
-                        // Both have no lastSeen, keep original order
-                        return 0;
-                    }
                     
                     // Both online, keep original order
                     return 0;
@@ -1510,25 +1540,46 @@
                     
                     // Format last seen
                     let lastSeenText = 'Never';
-                    if (userData.lastSeen) {
-                        const lastSeenDate = new Date(userData.lastSeen);
-                        const now = new Date();
-                        const diffMs = now - lastSeenDate;
-                        const diffMins = Math.floor(diffMs / 60000);
-                        const diffHours = Math.floor(diffMins / 60);
-                        const diffDays = Math.floor(diffHours / 24);
-                        
-                        // Check for valid numbers
-                        if (isNaN(diffMins) || diffMs < 0) {
-                            lastSeenText = 'Never';
-                        } else if (diffMins < 1) {
-                            lastSeenText = 'Just now';
-                        } else if (diffMins < 60) {
-                            lastSeenText = `${diffMins}m ago`;
-                        } else if (diffHours < 24) {
-                            lastSeenText = `${diffHours}h ago`;
-                        } else {
-                            lastSeenText = `${diffDays}d ago`;
+                    // Try to use lastSeenTimestamp first, then fall back to lastSeen
+                    const lastSeenValue = userData.lastSeenTimestamp || userData.lastSeen;
+                    
+                    if (lastSeenValue) {
+                        try {
+                            let lastSeenDate;
+                            
+                            // If it's a number (timestamp), use it directly
+                            if (typeof lastSeenValue === 'number') {
+                                lastSeenDate = new Date(lastSeenValue);
+                            } else {
+                                // Otherwise try to parse it as a date string
+                                lastSeenDate = new Date(lastSeenValue);
+                            }
+                            
+                            const lastSeenTimestamp = lastSeenDate.getTime();
+                            
+                            // Check if it's a valid date
+                            if (!isNaN(lastSeenTimestamp) && lastSeenTimestamp > 0) {
+                                const now = new Date();
+                                const diffMs = now - lastSeenDate;
+                                const diffMins = Math.floor(diffMs / 60000);
+                                const diffHours = Math.floor(diffMins / 60);
+                                const diffDays = Math.floor(diffHours / 24);
+                                
+                                // Check for valid numbers
+                                if (isNaN(diffMins) || diffMs < 0) {
+                                    lastSeenText = 'Never';
+                                } else if (diffMins < 1) {
+                                    lastSeenText = 'Just now';
+                                } else if (diffMins < 60) {
+                                    lastSeenText = `${diffMins}m ago`;
+                                } else if (diffHours < 24) {
+                                    lastSeenText = `${diffHours}h ago`;
+                                } else {
+                                    lastSeenText = `${diffDays}d ago`;
+                                }
+                            }
+                        } catch (error) {
+                            console.log('Error parsing lastSeen for user:', userData.callsign, 'Value:', lastSeenValue, 'Error:', error);
                         }
                     }
                     
@@ -1594,8 +1645,11 @@
                         
                         // If both are offline, sort by lastSeen availability and time
                         if (!aIsOnline && !bIsOnline) {
-                            const aHasLastSeen = aPilot.lastSeen && !isNaN(new Date(aPilot.lastSeen).getTime());
-                            const bHasLastSeen = bPilot.lastSeen && !isNaN(new Date(bPilot.lastSeen).getTime());
+                            const aLastSeenValue = aPilot.lastSeenTimestamp || aPilot.lastSeen;
+                            const bLastSeenValue = bPilot.lastSeenTimestamp || bPilot.lastSeen;
+                            
+                            const aHasLastSeen = aLastSeenValue && (typeof aLastSeenValue === 'number' ? true : !isNaN(new Date(aLastSeenValue).getTime()));
+                            const bHasLastSeen = bLastSeenValue && (typeof bLastSeenValue === 'number' ? true : !isNaN(new Date(bLastSeenValue).getTime()));
                             
                             // If one has lastSeen and the other doesn't, the one with lastSeen comes first
                             if (aHasLastSeen && !bHasLastSeen) return -1;
@@ -1603,8 +1657,8 @@
                             
                             // If both have lastSeen, sort by most recent
                             if (aHasLastSeen && bHasLastSeen) {
-                                const aLastSeen = new Date(aPilot.lastSeen).getTime();
-                                const bLastSeen = new Date(bPilot.lastSeen).getTime();
+                                const aLastSeen = typeof aLastSeenValue === 'number' ? aLastSeenValue : new Date(aLastSeenValue).getTime();
+                                const bLastSeen = typeof bLastSeenValue === 'number' ? bLastSeenValue : new Date(bLastSeenValue).getTime();
                                 return bLastSeen - aLastSeen; // Most recent first
                             }
                             
@@ -1622,25 +1676,46 @@
                         
                         // Format last seen
                         let lastSeenText = 'Never';
-                        if (pilot.lastSeen) {
-                            const lastSeenDate = new Date(pilot.lastSeen);
-                            const now = new Date();
-                            const diffMs = now - lastSeenDate;
-                            const diffMins = Math.floor(diffMs / 60000);
-                            const diffHours = Math.floor(diffMins / 60);
-                            const diffDays = Math.floor(diffHours / 24);
-                            
-                            // Check for valid numbers
-                            if (isNaN(diffMins) || diffMs < 0) {
-                                lastSeenText = 'Never';
-                            } else if (diffMins < 1) {
-                                lastSeenText = 'Just now';
-                            } else if (diffMins < 60) {
-                                lastSeenText = `${diffMins}m ago`;
-                            } else if (diffHours < 24) {
-                                lastSeenText = `${diffHours}h ago`;
-                            } else {
-                                lastSeenText = `${diffDays}d ago`;
+                        // Try to use lastSeenTimestamp first, then fall back to lastSeen
+                        const lastSeenValue = pilot.lastSeenTimestamp || pilot.lastSeen;
+                        
+                        if (lastSeenValue) {
+                            try {
+                                let lastSeenDate;
+                                
+                                // If it's a number (timestamp), use it directly
+                                if (typeof lastSeenValue === 'number') {
+                                    lastSeenDate = new Date(lastSeenValue);
+                                } else {
+                                    // Otherwise try to parse it as a date string
+                                    lastSeenDate = new Date(lastSeenValue);
+                                }
+                                
+                                const lastSeenTimestamp = lastSeenDate.getTime();
+                                
+                                // Check if it's a valid date
+                                if (!isNaN(lastSeenTimestamp) && lastSeenTimestamp > 0) {
+                                    const now = new Date();
+                                    const diffMs = now - lastSeenDate;
+                                    const diffMins = Math.floor(diffMs / 60000);
+                                    const diffHours = Math.floor(diffMins / 60);
+                                    const diffDays = Math.floor(diffHours / 24);
+                                    
+                                    // Check for valid numbers
+                                    if (isNaN(diffMins) || diffMs < 0) {
+                                        lastSeenText = 'Never';
+                                    } else if (diffMins < 1) {
+                                        lastSeenText = 'Just now';
+                                    } else if (diffMins < 60) {
+                                        lastSeenText = `${diffMins}m ago`;
+                                    } else if (diffHours < 24) {
+                                        lastSeenText = `${diffHours}h ago`;
+                                    } else {
+                                        lastSeenText = `${diffDays}d ago`;
+                                    }
+                                }
+                            } catch (error) {
+                                console.log('Error parsing lastSeen for pilot:', pilot.callsign, 'Value:', lastSeenValue, 'Error:', error);
                             }
                         }
                         
@@ -2332,10 +2407,252 @@
             }
         }
 
+        // Load survey summary
+        async function loadSurveySummary() {
+            try {
+                const surveyRef = database.ref('surveys');
+                surveyRef.on('value', (snapshot) => {
+                    const surveys = snapshot.val();
+                    if (surveys) {
+                        const surveySummary = document.getElementById('survey-summary');
+                        const surveyStats = document.getElementById('survey-stats');
+                        if (surveySummary && surveyStats) {
+                            const totalResponses = Object.keys(surveys).length;
+                            
+                            // Calculate average ratings
+                            let totalSetup = 0, totalControls = 0, totalVjoy = 0;
+                            Object.values(surveys).forEach(survey => {
+                                if (survey.ratings) {
+                                    totalSetup += survey.ratings.setupEase || 0;
+                                    totalControls += survey.ratings.controlResponsiveness || 0;
+                                    totalVjoy += survey.ratings.vjoyIntegration || 0;
+                                }
+                            });
+                            
+                            const avgSetup = (totalSetup / totalResponses).toFixed(1);
+                            const avgControls = (totalControls / totalResponses).toFixed(1);
+                            const avgVjoy = (totalVjoy / totalResponses).toFixed(1);
+                            
+                            surveyStats.innerHTML = `
+                                <strong>${totalResponses}</strong> responses<br>
+                                Avg: Setup ${avgSetup}★ | Controls ${avgControls}★ | vJoy ${avgVjoy}★
+                            `;
+                            surveySummary.style.display = 'block';
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading survey summary:', error);
+            }
+        }
+
+        async function viewSurveyResponses() {
+            try {
+                const snapshot = await database.ref('surveys').once('value');
+                const surveys = snapshot.val();
+                
+                // Create modal
+                const modal = document.createElement('div');
+                modal.className = 'dialog-overlay';
+                modal.style.display = 'flex';
+                
+                let modalHTML = `
+                    <div class="dialog-box" style="min-width: 900px; max-width: 95vw;">
+                        <div class="dialog-header">
+                            <h3>Survey Responses</h3>
+                        </div>
+                        <div class="dialog-content" style="max-height: 600px; overflow-y: auto;">
+                `;
+                
+                if (!surveys || Object.keys(surveys).length === 0) {
+                    modalHTML += '<p style="text-align: center; color: #888888; padding: 40px;">No survey responses yet.</p>';
+                } else {
+                    modalHTML += `
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(255,255,255,0.05);">
+                                    <th style="border: 1px solid #404040; padding: 10px; text-align: left;">User</th>
+                                    <th style="border: 1px solid #404040; padding: 10px; text-align: center;">Setup Ease</th>
+                                    <th style="border: 1px solid #404040; padding: 10px; text-align: center;">Controls</th>
+                                    <th style="border: 1px solid #404040; padding: 10px; text-align: center;">vJoy</th>
+                                    <th style="border: 1px solid #404040; padding: 10px; text-align: left;">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    Object.entries(surveys).forEach(([surveyId, survey]) => {
+                        const email = survey.userEmail || survey.userId || 'Unknown';
+                        const setupRating = survey.ratings?.setupEase || '-';
+                        const controlsRating = survey.ratings?.controlResponsiveness || '-';
+                        const vjoyRating = survey.ratings?.vjoyIntegration || '-';
+                        const date = survey.timestamp ? new Date(survey.timestamp).toLocaleString() : '-';
+                        
+                        modalHTML += `
+                            <tr style="border-bottom: 1px solid #333;">
+                                <td style="border: 1px solid #404040; padding: 10px; color: #ffffff;">${email}</td>
+                                <td style="border: 1px solid #404040; padding: 10px; text-align: center; color: ${setupRating >= 4 ? '#00ff88' : setupRating >= 3 ? '#ffa500' : '#ff4444'};">${setupRating}★</td>
+                                <td style="border: 1px solid #404040; padding: 10px; text-align: center; color: ${controlsRating >= 4 ? '#00ff88' : controlsRating >= 3 ? '#ffa500' : '#ff4444'};">${controlsRating}★</td>
+                                <td style="border: 1px solid #404040; padding: 10px; text-align: center; color: ${vjoyRating >= 4 ? '#00ff88' : vjoyRating >= 3 ? '#ffa500' : '#ff4444'};">${vjoyRating}★</td>
+                                <td style="border: 1px solid #404040; padding: 10px; color: #cccccc; font-size: 12px;">${date}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    modalHTML += `
+                            </tbody>
+                        </table>
+                    `;
+                }
+                
+                modalHTML += `
+                        </div>
+                        <div class="dialog-actions">
+                            <button class="dialog-btn dialog-btn-secondary" onclick="this.closest('.dialog-overlay').remove()">Close</button>
+                        </div>
+                    </div>
+                `;
+                
+                modal.innerHTML = modalHTML;
+                document.body.appendChild(modal);
+                
+            } catch (error) {
+                console.error('Error viewing survey responses:', error);
+                showDialog('Error', 'Failed to load survey responses. Please try again.');
+            }
+        }
+
+        // Load close app status
+        async function loadCloseAppStatus() {
+            try {
+                const closeAppRef = database.ref('admin_commands/close_app');
+                closeAppRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const statusDiv = document.getElementById('close-app-status');
+                        const infoDiv = document.getElementById('close-app-info');
+                        
+                        if (statusDiv && infoDiv) {
+                            statusDiv.style.display = 'block';
+                            const message = data.message || 'Please update';
+                            
+                            infoDiv.innerHTML = `"${message}"`;
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading close app status:', error);
+            }
+        }
+
+        async function pressCloseApp() {
+            // Confirm action
+            const confirmed = await showDialog(
+                'Force Close App',
+                '⚠️ Are you sure? This will immediately close the app for ALL connected users!',
+                true
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            try {
+                // Get current message
+                const snapshot = await database.ref('admin_commands/close_app').once('value');
+                const currentData = snapshot.val() || { enabled: false, message: 'Please update', timestamp: 0 };
+                
+                // Set enabled to true (press)
+                await database.ref('admin_commands/close_app').update({
+                    enabled: true,
+                    timestamp: Date.now()
+                });
+                
+                showNotification('Force close command sent! App closing for all users...');
+                
+                // Automatically set back to false after 2 seconds (release)
+                setTimeout(async () => {
+                    await database.ref('admin_commands/close_app').update({
+                        enabled: false,
+                        timestamp: Date.now()
+                    });
+                    showNotification('Force close command reset.');
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error sending close app command:', error);
+                showDialog('Error', 'Failed to send command. Please try again.');
+            }
+        }
+
+        async function editCloseMessage() {
+            try {
+                // Get current message
+                const snapshot = await database.ref('admin_commands/close_app').once('value');
+                const currentData = snapshot.val() || { enabled: false, message: 'Please update', timestamp: 0 };
+                
+                // Create dialog
+                const modal = document.createElement('div');
+                modal.className = 'dialog-overlay';
+                modal.style.display = 'flex';
+                modal.innerHTML = `
+                    <div class="dialog-box" style="min-width: 500px;">
+                        <div class="dialog-header">
+                            <h3>Edit Force Close Message</h3>
+                        </div>
+                        <div class="dialog-content">
+                            <p style="color: #888888; margin-bottom: 15px;">
+                                This message will be displayed to users when the force close command is triggered.
+                            </p>
+                            <div class="form-group">
+                                <label>Close Message:</label>
+                                <textarea id="close-message-text" rows="3" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #404040; border-radius: 4px; color: #ffffff; font-family: inherit; font-size: 14px;">${currentData.message || 'Please update'}</textarea>
+                            </div>
+                        </div>
+                        <div class="dialog-actions">
+                            <button class="dialog-btn dialog-btn-secondary" onclick="this.closest('.dialog-overlay').remove()">Cancel</button>
+                            <button class="dialog-btn dialog-btn-primary" onclick="saveCloseMessage()">Save Message</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                // Focus on textarea
+                setTimeout(() => {
+                    document.getElementById('close-message-text').focus();
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error editing close message:', error);
+                showDialog('Error', 'Failed to load message for editing.');
+            }
+        }
+
+        async function saveCloseMessage() {
+            try {
+                const message = document.getElementById('close-message-text').value;
+                
+                await database.ref('admin_commands/close_app').update({
+                    message: message
+                });
+                
+                // Close modal
+                document.querySelector('.dialog-overlay').remove();
+                
+                showNotification('Force close message updated!');
+                
+            } catch (error) {
+                console.error('Error saving close message:', error);
+                showDialog('Error', 'Failed to save message. Please try again.');
+            }
+        }
+
         // Load data on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboardData();
             loadAnnouncement();
+            loadSurveySummary();
+            loadCloseAppStatus();
         });
 
         // Add CSS animation
