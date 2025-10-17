@@ -965,7 +965,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>AirJB</h1>
-                <span class="tagline">AtyoursTruly v2.1</span>
+                <span class="tagline">AtyoursTruly v2.5</span>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
@@ -1737,13 +1737,14 @@
                     </div>
                 `;
                 
-                // Add numbered replies (0, 1, 2, etc.)
+                // Add numbered replies (0, 1, 2, etc.) - check both 'replies' object and direct ticket data
+                const repliesSource = ticketData.replies || ticketData;
                 const replies = [];
                 let replyIndex = 0;
-                while (ticketData[replyIndex.toString()]) {
+                while (repliesSource[replyIndex.toString()]) {
                     replies.push({
                         index: replyIndex,
-                        data: ticketData[replyIndex.toString()]
+                        data: repliesSource[replyIndex.toString()]
                     });
                     replyIndex++;
                 }
@@ -1865,18 +1866,23 @@
                     return;
                 }
                 
+                // Check if replies are stored in a 'replies' object or directly on ticket
+                const repliesData = ticketData.replies || ticketData;
+                const repliesPath = ticketData.replies ? `support_tickets/${ticketId}/replies` : `support_tickets/${ticketId}`;
+                
                 // Find the next reply index by checking existing numbered replies
                 let nextReplyIndex = 0;
-                while (ticketData[nextReplyIndex.toString()]) {
+                while (repliesData[nextReplyIndex.toString()]) {
                     nextReplyIndex++;
                 }
                 
                 // Check if there's a pending placeholder to replace
                 let hasPendingPlaceholder = false;
                 console.log('Checking for placeholders, nextReplyIndex:', nextReplyIndex);
+                console.log('Replies data:', repliesData);
                 
                 for (let i = 0; i < nextReplyIndex; i++) {
-                    const reply = ticketData[i.toString()];
+                    const reply = repliesData[i.toString()];
                     console.log(`Reply ${i}:`, reply);
                     
                     if (reply && reply.author === 'Support Team') {
@@ -1891,7 +1897,7 @@
                         if (isPlaceholder) {
                             console.log('Replacing placeholder at index:', i);
                             // Replace the pending placeholder
-                            await database.ref(`support_tickets/${ticketId}/${i}`).update({
+                            await database.ref(`${repliesPath}/${i}`).update({
                                 message: replyMessage,
                                 timestamp: new Date().toISOString(),
                                 author: 'Support Team'
@@ -1906,7 +1912,7 @@
                 
                 // If no pending placeholder found, create new reply
                 if (!hasPendingPlaceholder) {
-                    await database.ref(`support_tickets/${ticketId}/${nextReplyIndex}`).set({
+                    await database.ref(`${repliesPath}/${nextReplyIndex}`).set({
                         message: replyMessage,
                         timestamp: new Date().toISOString(),
                         author: 'Support Team'
