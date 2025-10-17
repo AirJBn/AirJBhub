@@ -1071,12 +1071,26 @@
             </div>
 
             <!-- System Settings -->
-            <div class="hub-card">
+            <div class="hub-card" style="max-height: 180px;">
                 <h3>System Settings</h3>
-                <p>Configure system parameters, manage integrations, and update settings.</p>
+                <p>Configure system parameters and manage integrations.</p>
                 <div class="hub-actions">
                     <button class="hub-btn" onclick="systemSettings()">Settings</button>
                     <button class="hub-btn secondary" onclick="backupData()">Backup</button>
+                </div>
+            </div>
+
+            <!-- App Announcements -->
+            <div class="hub-card">
+                <h3>App Announcements</h3>
+                <p>Edit the message displayed to users in the app.</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" onclick="editAnnouncement()">Edit Message</button>
+                </div>
+                <div id="current-announcement" style="margin-top: 15px; padding: 10px; background: rgba(45, 90, 45, 0.1); border-left: 3px solid #2d5a2d; border-radius: 4px; display: none;">
+                    <div style="color: #888888; font-size: 11px; margin-bottom: 5px;">Current Message:</div>
+                    <div id="announcement-text" style="color: #ffffff; font-size: 13px;"></div>
+                    <div style="color: #888888; font-size: 11px; margin-top: 5px;">Status: <span id="announcement-status" style="color: #2d5a2d;">Loading...</span></div>
                 </div>
             </div>
 
@@ -1457,7 +1471,7 @@
                 const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
                 let onlineCount = 0;
                 
-                // Sort users: online first, then offline by most recent lastSeen
+                // Sort users: 1) Online, 2) Offline with lastSeen (most recent first), 3) Never
                 const sortedUsers = users.sort(([aId, aData], [bId, bData]) => {
                     const aIsOnline = aData.isOnline && (!aData.lastSeen || new Date(aData.lastSeen) > fiveMinutesAgo);
                     const bIsOnline = bData.isOnline && (!bData.lastSeen || new Date(bData.lastSeen) > fiveMinutesAgo);
@@ -1466,11 +1480,24 @@
                     if (aIsOnline && !bIsOnline) return -1;
                     if (!aIsOnline && bIsOnline) return 1;
                     
-                    // If both are offline, sort by most recent lastSeen
+                    // If both are offline, sort by lastSeen availability and time
                     if (!aIsOnline && !bIsOnline) {
-                        const aLastSeen = aData.lastSeen ? new Date(aData.lastSeen).getTime() : 0;
-                        const bLastSeen = bData.lastSeen ? new Date(bData.lastSeen).getTime() : 0;
-                        return bLastSeen - aLastSeen; // Most recent first
+                        const aHasLastSeen = aData.lastSeen && !isNaN(new Date(aData.lastSeen).getTime());
+                        const bHasLastSeen = bData.lastSeen && !isNaN(new Date(bData.lastSeen).getTime());
+                        
+                        // If one has lastSeen and the other doesn't, the one with lastSeen comes first
+                        if (aHasLastSeen && !bHasLastSeen) return -1;
+                        if (!aHasLastSeen && bHasLastSeen) return 1;
+                        
+                        // If both have lastSeen, sort by most recent
+                        if (aHasLastSeen && bHasLastSeen) {
+                            const aLastSeen = new Date(aData.lastSeen).getTime();
+                            const bLastSeen = new Date(bData.lastSeen).getTime();
+                            return bLastSeen - aLastSeen; // Most recent first
+                        }
+                        
+                        // Both have no lastSeen, keep original order
+                        return 0;
                     }
                     
                     // Both online, keep original order
@@ -1556,7 +1583,7 @@
                 if (pilots.length === 0) {
                     userList.innerHTML = '<div class="loading-message">No users found</div>';
                 } else {
-                    // Sort pilots: online first, then offline by most recent lastSeen
+                    // Sort pilots: 1) Online, 2) Offline with lastSeen (most recent first), 3) Never
                     const sortedPilots = pilots.sort(([aUid, aPilot], [bUid, bPilot]) => {
                         const aIsOnline = aPilot.isOnline && (!aPilot.lastSeen || new Date(aPilot.lastSeen) > new Date(Date.now() - 5 * 60 * 1000));
                         const bIsOnline = bPilot.isOnline && (!bPilot.lastSeen || new Date(bPilot.lastSeen) > new Date(Date.now() - 5 * 60 * 1000));
@@ -1565,11 +1592,24 @@
                         if (aIsOnline && !bIsOnline) return -1;
                         if (!aIsOnline && bIsOnline) return 1;
                         
-                        // If both are offline, sort by most recent lastSeen
+                        // If both are offline, sort by lastSeen availability and time
                         if (!aIsOnline && !bIsOnline) {
-                            const aLastSeen = aPilot.lastSeen ? new Date(aPilot.lastSeen).getTime() : 0;
-                            const bLastSeen = bPilot.lastSeen ? new Date(bPilot.lastSeen).getTime() : 0;
-                            return bLastSeen - aLastSeen; // Most recent first
+                            const aHasLastSeen = aPilot.lastSeen && !isNaN(new Date(aPilot.lastSeen).getTime());
+                            const bHasLastSeen = bPilot.lastSeen && !isNaN(new Date(bPilot.lastSeen).getTime());
+                            
+                            // If one has lastSeen and the other doesn't, the one with lastSeen comes first
+                            if (aHasLastSeen && !bHasLastSeen) return -1;
+                            if (!aHasLastSeen && bHasLastSeen) return 1;
+                            
+                            // If both have lastSeen, sort by most recent
+                            if (aHasLastSeen && bHasLastSeen) {
+                                const aLastSeen = new Date(aPilot.lastSeen).getTime();
+                                const bLastSeen = new Date(bPilot.lastSeen).getTime();
+                                return bLastSeen - aLastSeen; // Most recent first
+                            }
+                            
+                            // Both have no lastSeen, keep original order
+                            return 0;
                         }
                         
                         // Both online, keep original order
@@ -2203,9 +2243,99 @@
             }
         });
 
+        // Load announcement data
+        async function loadAnnouncement() {
+            try {
+                const announcementRef = database.ref('admin_message');
+                announcementRef.on('value', (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const announcementDiv = document.getElementById('current-announcement');
+                        const textDiv = document.getElementById('announcement-text');
+                        const statusSpan = document.getElementById('announcement-status');
+                        
+                        if (announcementDiv && textDiv && statusSpan) {
+                            announcementDiv.style.display = 'block';
+                            textDiv.textContent = data.message || 'No message set';
+                            statusSpan.textContent = data.enabled ? 'Enabled' : 'Disabled';
+                            statusSpan.style.color = data.enabled ? '#2d5a2d' : '#ff4444';
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading announcement:', error);
+            }
+        }
+
+        async function editAnnouncement() {
+            try {
+                // Get current announcement
+                const snapshot = await database.ref('admin_message').once('value');
+                const currentData = snapshot.val() || { message: '', enabled: false };
+                
+                // Create custom dialog for editing
+                const modal = document.createElement('div');
+                modal.className = 'dialog-overlay';
+                modal.style.display = 'flex';
+                modal.innerHTML = `
+                    <div class="dialog-box" style="min-width: 500px;">
+                        <div class="dialog-header">
+                            <h3>Edit App Announcement</h3>
+                        </div>
+                        <div class="dialog-content">
+                            <div class="form-group">
+                                <label>Message:</label>
+                                <textarea id="announcement-edit-text" rows="4" style="width: 100%; padding: 10px; background: #1a1a1a; border: 1px solid #404040; border-radius: 4px; color: #ffffff; font-family: inherit; font-size: 14px;">${currentData.message || ''}</textarea>
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                                <label style="margin: 0;">Enabled:</label>
+                                <input type="checkbox" id="announcement-enabled" ${currentData.enabled ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
+                            </div>
+                        </div>
+                        <div class="dialog-actions">
+                            <button class="dialog-btn dialog-btn-secondary" onclick="this.closest('.dialog-overlay').remove()">Cancel</button>
+                            <button class="dialog-btn dialog-btn-primary" onclick="saveAnnouncement()">Save</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+                
+                // Focus on textarea
+                setTimeout(() => {
+                    document.getElementById('announcement-edit-text').focus();
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error editing announcement:', error);
+                showDialog('Error', 'Failed to load announcement for editing.');
+            }
+        }
+
+        async function saveAnnouncement() {
+            try {
+                const message = document.getElementById('announcement-edit-text').value;
+                const enabled = document.getElementById('announcement-enabled').checked;
+                
+                await database.ref('admin_message').set({
+                    message: message,
+                    enabled: enabled
+                });
+                
+                // Close modal
+                document.querySelector('.dialog-overlay').remove();
+                
+                showNotification('Announcement updated successfully!');
+                
+            } catch (error) {
+                console.error('Error saving announcement:', error);
+                showDialog('Error', 'Failed to save announcement. Please try again.');
+            }
+        }
+
         // Load data on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboardData();
+            loadAnnouncement();
         });
 
         // Add CSS animation
