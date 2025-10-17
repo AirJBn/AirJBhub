@@ -857,22 +857,10 @@
             min-width: 150px;
         }
 
-        .user-session-info {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
         .user-email {
             color: #888888;
             font-size: 14px;
-        }
-
-        .session-stats {
-            color: #666666;
-            font-size: 10px;
-            font-family: 'Courier New', monospace;
+            margin-left: 10px;
         }
 
         .reply-form-actions {
@@ -1236,9 +1224,6 @@
                 // Load users list since it's shown by default
                 loadUsersListInline();
                 
-                // Start monitoring user sessions
-                startSessionMonitoring();
-                
             } catch (error) {
                 console.error('Error verifying admin:', error);
                 await auth.signOut();
@@ -1300,7 +1285,6 @@
                 await loadDownloadCountFromFirebase();
                 
             } catch (error) {
-                console.error('Error fetching download count from FlightSim.to:', error);
                 // Fallback to Firebase cache
                 await loadDownloadCountFromFirebase();
             }
@@ -1320,246 +1304,10 @@
                     await database.ref('app_stats/download_count').set(39);
                 }
             } catch (error) {
-                console.error('Error loading download count from Firebase:', error);
                 document.getElementById('total-downloads').textContent = '39';
             }
         }
 
-        // Session logging system
-        async function logUserSession(userId, sessionStart, sessionEnd) {
-            try {
-                const sessionDuration = sessionEnd - sessionStart;
-                const sessionMinutes = Math.floor(sessionDuration / (1000 * 60));
-                const sessionHours = Math.floor(sessionMinutes / 60);
-                const remainingMinutes = sessionMinutes % 60;
-                
-                // Create session log entry
-                const sessionId = 'session_' + Date.now();
-                const sessionData = {
-                    userId: userId,
-                    startTime: sessionStart,
-                    endTime: sessionEnd,
-                    duration: sessionDuration,
-                    durationMinutes: sessionMinutes,
-                    durationFormatted: `${sessionHours}h ${remainingMinutes}m`,
-                    timestamp: new Date().toISOString()
-                };
-                
-                // Save session log
-                await database.ref(`session_logs/${sessionId}`).set(sessionData);
-                
-                // Update user's total session time
-                const userRef = database.ref(`pilots/${userId}`);
-                const userSnapshot = await userRef.once('value');
-                const userData = userSnapshot.val() || {};
-                
-                const currentTotalMinutes = userData.totalSessionMinutes || 0;
-                const newTotalMinutes = currentTotalMinutes + sessionMinutes;
-                const newTotalHours = Math.floor(newTotalMinutes / 60);
-                const newRemainingMinutes = newTotalMinutes % 60;
-                
-                // Update user data
-                await userRef.update({
-                    totalSessionMinutes: newTotalMinutes,
-                    totalSessionTime: `${newTotalHours}h ${newRemainingMinutes}m`,
-                    lastSessionDuration: sessionData.durationFormatted,
-                    lastSessionEnd: sessionEnd,
-                    sessionCount: (userData.sessionCount || 0) + 1
-                });
-                
-                console.log(`Session logged for user ${userId}: ${sessionData.durationFormatted}`);
-                
-            } catch (error) {
-                console.error('Error logging user session:', error);
-            }
-        }
-        
-        // Monitor user sessions (call this when users go offline)
-        async function handleUserOffline(userId) {
-            try {
-                const userRef = database.ref(`pilots/${userId}`);
-                const userSnapshot = await userRef.once('value');
-                const userData = userSnapshot.val();
-                
-                if (userData && userData.sessionStartTime) {
-                    const sessionStart = userData.sessionStartTime;
-                    const sessionEnd = Date.now();
-                    
-                    // Only log sessions longer than 1 minute
-                    if (sessionEnd - sessionStart > 60000) {
-                        await logUserSession(userId, sessionStart, sessionEnd);
-                    }
-                    
-                    // Clear session start time
-                    await userRef.update({
-                        sessionStartTime: null,
-                        isOnline: false,
-                        lastSeen: sessionEnd
-                    });
-                }
-            } catch (error) {
-                console.error('Error handling user offline:', error);
-            }
-        }
-        
-        // Session monitoring system
-        let sessionMonitoringActive = false;
-        let userStatusCache = new Map(); // Track previous online status
-        
-        function startSessionMonitoring() {
-            if (sessionMonitoringActive) return;
-            sessionMonitoringActive = true;
-            
-            console.log('🔍 Starting session monitoring system...');
-            
-            // Monitor every 30 seconds
-            setInterval(async () => {
-                await checkForSessionChanges();
-            }, 30000);
-            
-            // Initial check
-            checkForSessionChanges();
-        }
-        
-        async function checkForSessionChanges() {
-            try {
-                const pilotsSnapshot = await database.ref('pilots').once('value');
-                const pilotsData = pilotsSnapshot.val() || {};
-                
-                const now = Date.now();
-                const onlineThreshold = 2 * 60 * 1000; // 2 minutes to be more responsive
-                
-                console.log(`🔍 Checking ${Object.keys(pilotsData).length} users for session changes...`);
-                
-                for (const [userId, userData] of Object.entries(pilotsData)) {
-                    const wasOnline = userStatusCache.get(userId) || false;
-                    
-                    // Determine current online status
-                    let isCurrentlyOnline = false;
-                    if (userData.isOnline) {
-                        if (userData.lastSeen) {
-                            const lastSeenTime = new Date(userData.lastSeen).getTime();
-                            const timeSinceLastSeen = now - lastSeenTime;
-                            isCurrentlyOnline = timeSinceLastSeen < onlineThreshold;
-                            
-                            // Debug logging for your account
-                            if (userData.email === 'noahwelld@gmail.com' || userData.callsign === 'AIRJB001SS') {
-                                console.log(`🔍 Debug for ${userData.callsign || userData.email}:`, {
-                                    isOnline: userData.isOnline,
-                                    lastSeen: userData.lastSeen,
-                                    timeSinceLastSeen: Math.floor(timeSinceLastSeen / 1000) + 's',
-                                    threshold: Math.floor(onlineThreshold / 1000) + 's',
-                                    isCurrentlyOnline,
-                                    wasOnline,
-                                    sessionStartTime: userData.sessionStartTime,
-                                    totalSessionTime: userData.totalSessionTime
-                                });
-                            }
-                        } else {
-                            isCurrentlyOnline = true; // Fallback for old data
-                        }
-                    }
-                    
-                    // Detect status changes
-                    if (!wasOnline && isCurrentlyOnline) {
-                        // User came online - start new session
-                        await handleUserCameOnline(userId, userData);
-                        console.log(`✅ User ${userData.callsign || userData.email} came online`);
-                    } else if (wasOnline && !isCurrentlyOnline) {
-                        // User went offline - end session
-                        await handleUserWentOffline(userId, userData);
-                        console.log(`❌ User ${userData.callsign || userData.email} went offline`);
-                    }
-                    
-                    // Update cache
-                    userStatusCache.set(userId, isCurrentlyOnline);
-                }
-                
-            } catch (error) {
-                console.error('Error checking session changes:', error);
-            }
-        }
-        
-        async function handleUserCameOnline(userId, userData) {
-            try {
-                const userRef = database.ref(`pilots/${userId}`);
-                const sessionStartTime = Date.now();
-                
-                // Initialize session tracking data if not exists
-                const updates = {
-                    sessionStartTime: sessionStartTime,
-                    isOnline: true,
-                    lastSeen: sessionStartTime
-                };
-                
-                // Initialize session stats if they don't exist
-                if (!userData.totalSessionMinutes) {
-                    updates.totalSessionMinutes = 0;
-                    updates.totalSessionTime = '0h 0m';
-                    updates.sessionCount = 0;
-                }
-                
-                await userRef.update(updates);
-                
-            } catch (error) {
-                console.error('Error handling user came online:', error);
-            }
-        }
-        
-        async function handleUserWentOffline(userId, userData) {
-            try {
-                const userRef = database.ref(`pilots/${userId}`);
-                const sessionEndTime = Date.now();
-                
-                // Calculate session duration if we have a start time
-                if (userData.sessionStartTime) {
-                    const sessionDuration = sessionEndTime - userData.sessionStartTime;
-                    const sessionMinutes = Math.floor(sessionDuration / (1000 * 60));
-                    
-                    // Only log sessions longer than 1 minute
-                    if (sessionMinutes >= 1) {
-                        await logUserSession(userId, userData.sessionStartTime, sessionEndTime);
-                        
-                        // Update user's total session time
-                        const currentTotalMinutes = userData.totalSessionMinutes || 0;
-                        const newTotalMinutes = currentTotalMinutes + sessionMinutes;
-                        const newTotalHours = Math.floor(newTotalMinutes / 60);
-                        const newRemainingMinutes = newTotalMinutes % 60;
-                        
-                        const sessionHours = Math.floor(sessionMinutes / 60);
-                        const sessionRemainingMinutes = sessionMinutes % 60;
-                        
-                        await userRef.update({
-                            totalSessionMinutes: newTotalMinutes,
-                            totalSessionTime: `${newTotalHours}h ${newRemainingMinutes}m`,
-                            lastSessionDuration: `${sessionHours}h ${sessionRemainingMinutes}m`,
-                            sessionCount: (userData.sessionCount || 0) + 1,
-                            sessionStartTime: null,
-                            isOnline: false,
-                            lastSeen: sessionEndTime
-                        });
-                        
-                        console.log(`📊 Session logged: ${sessionHours}h ${sessionRemainingMinutes}m for ${userData.callsign || userData.email}`);
-                    } else {
-                        // Just mark offline without logging short session
-                        await userRef.update({
-                            sessionStartTime: null,
-                            isOnline: false,
-                            lastSeen: sessionEndTime
-                        });
-                    }
-                } else {
-                    // No session start time, just mark offline
-                    await userRef.update({
-                        isOnline: false,
-                        lastSeen: sessionEndTime
-                    });
-                }
-                
-            } catch (error) {
-                console.error('Error handling user went offline:', error);
-            }
-        }
 
         // Load dashboard data
         async function loadDashboardData() {
@@ -1589,7 +1337,6 @@
                 loadDownloadCount();
                 
             } catch (error) {
-                console.error('Error loading dashboard data:', error);
                 // Set fallback values
                 document.getElementById('total-users').textContent = '--';
                 document.getElementById('active-pilots').textContent = '--';
@@ -1690,18 +1437,35 @@
                     const isOnline = userData.isOnline && (!userData.lastSeen || new Date(userData.lastSeen) > fiveMinutesAgo);
                     if (isOnline) onlineCount++;
                     
-                    const totalSessionTime = userData.totalSessionTime || '0h 0m';
-                    const sessionCount = userData.sessionCount || 0;
-                    const lastSession = userData.lastSessionDuration || 'N/A';
+                    // Format last seen
+                    let lastSeenText = 'Never';
+                    if (userData.lastSeen) {
+                        const lastSeenDate = new Date(userData.lastSeen);
+                        const now = new Date();
+                        const diffMs = now - lastSeenDate;
+                        const diffMins = Math.floor(diffMs / 60000);
+                        const diffHours = Math.floor(diffMins / 60);
+                        const diffDays = Math.floor(diffHours / 24);
+                        
+                        if (diffMins < 1) {
+                            lastSeenText = 'Just now';
+                        } else if (diffMins < 60) {
+                            lastSeenText = `${diffMins}m ago`;
+                        } else if (diffHours < 24) {
+                            lastSeenText = `${diffHours}h ago`;
+                        } else {
+                            lastSeenText = `${diffDays}d ago`;
+                        }
+                    }
+                    
+                    // Get session duration
+                    const sessionDuration = userData.sessionDurationReadable || '0h 0m';
                     
                     return `
                         <div class="user-item">
                             <div class="user-status-indicator ${isOnline ? 'online' : 'offline'}"></div>
                             <div class="user-name">${userData.callsign || userData.displayName || 'Unknown User'}</div>
-                            <div class="user-session-info">
-                                <div class="user-email">${userData.email || ''}</div>
-                                <div class="session-stats">Total: ${totalSessionTime} • Sessions: ${sessionCount} • Last: ${lastSession}</div>
-                            </div>
+                            <div class="user-email">${userData.email || ''} • ${sessionDuration} • Last: ${lastSeenText}</div>
                         </div>
                     `;
                 }).join('');
@@ -1711,7 +1475,6 @@
                 onlineElement.textContent = onlineCount;
                 
             } catch (error) {
-                console.error('Error loading users:', error);
                 container.innerHTML = '<div class="loading-message">Error loading users</div>';
                 totalElement.textContent = '--';
                 onlineElement.textContent = '--';
@@ -1750,21 +1513,44 @@
                         const isOnline = pilot.isOnline && (!pilot.lastSeen || new Date(pilot.lastSeen) > new Date(Date.now() - 5 * 60 * 1000));
                         const memberSince = pilot.createdAt ? new Date(pilot.createdAt).toLocaleDateString() : 'Unknown';
                         
+                        // Format last seen
+                        let lastSeenText = 'Never';
+                        if (pilot.lastSeen) {
+                            const lastSeenDate = new Date(pilot.lastSeen);
+                            const now = new Date();
+                            const diffMs = now - lastSeenDate;
+                            const diffMins = Math.floor(diffMs / 60000);
+                            const diffHours = Math.floor(diffMins / 60);
+                            const diffDays = Math.floor(diffHours / 24);
+                            
+                            if (diffMins < 1) {
+                                lastSeenText = 'Just now';
+                            } else if (diffMins < 60) {
+                                lastSeenText = `${diffMins}m ago`;
+                            } else if (diffHours < 24) {
+                                lastSeenText = `${diffHours}h ago`;
+                            } else {
+                                lastSeenText = `${diffDays}d ago`;
+                            }
+                        }
+                        
+                        // Get session duration
+                        const sessionDuration = pilot.sessionDurationReadable || '0h 0m';
+                        
                         return `
                             <div class="user-row">
                                 <div class="user-status-dot ${isOnline ? 'online' : 'offline'}"></div>
                                 <div class="user-name">${pilot.callsign || 'Unknown'}</div>
                                 <div class="user-details">
                                     ${pilot.email || 'No email'} • 
-                                    ${pilot.totalFlightHours || 0}h • 
-                                    Member since ${memberSince}
+                                    ${sessionDuration} • 
+                                    Last: ${lastSeenText}
                                 </div>
                             </div>
                         `;
                     }).join('');
                 }
             } catch (error) {
-                console.error('Error loading users:', error);
                 userList.innerHTML = '<div class="loading-message">Error loading users</div>';
             }
         }
@@ -1812,7 +1598,6 @@
                     `).join('');
                 }
             } catch (error) {
-                console.error('Error loading tickets:', error);
                 ticketsList.innerHTML = '<div class="loading-message">Error loading tickets</div>';
             }
         }
@@ -1884,7 +1669,6 @@
                     `).join('');
                 }
             } catch (error) {
-                console.error('Error loading tickets:', error);
                 ticketsList.innerHTML = '<div class="loading-message">Error loading tickets</div>';
             }
         }
@@ -1991,7 +1775,6 @@
                 `;
                 
             } catch (error) {
-                console.error('Error loading ticket details:', error);
                 ticketDetails.innerHTML = '<div class="loading-message">Error loading ticket details</div>';
             }
         }
@@ -2025,7 +1808,6 @@
                 showNotification(statusMessages[newStatus] || 'Status updated');
                 
             } catch (error) {
-                console.error('Error updating ticket status:', error);
                 showDialog('Error', 'Failed to update ticket status. Please try again.');
             }
         }
@@ -2102,7 +1884,6 @@
                 showNotification('Reply sent successfully!');
                 
             } catch (error) {
-                console.error('Error sending reply:', error);
                 showDialog('Error', 'Failed to send reply. Please try again.');
             } finally {
                 replyBtn.disabled = false;
@@ -2118,31 +1899,6 @@
             showNotification('Data refreshed successfully');
         }
 
-        // Manual session test function (temporary for debugging)
-        async function testSessionForUser(userEmail) {
-            try {
-                const pilotsSnapshot = await database.ref('pilots').once('value');
-                const pilotsData = pilotsSnapshot.val() || {};
-                
-                for (const [userId, userData] of Object.entries(pilotsData)) {
-                    if (userData.email === userEmail) {
-                        console.log(`🧪 Testing session for ${userData.callsign || userData.email}`);
-                        console.log('Current data:', userData);
-                        
-                        // Force start a session
-                        await handleUserCameOnline(userId, userData);
-                        console.log('✅ Session started manually');
-                        
-                        // Refresh the display
-                        loadUsersListInline();
-                        return;
-                    }
-                }
-                console.log('❌ User not found:', userEmail);
-            } catch (error) {
-                console.error('Error testing session:', error);
-            }
-        }
 
         function exportData() {
             showDialog('Export Data', 'Data export functionality is coming soon!');
@@ -2190,7 +1946,6 @@
                 localStorage.removeItem('airjb-admin-uid');
             window.location.href = 'index.html';
             } catch (error) {
-                console.error('Logout error:', error);
                 // Force redirect even if logout fails
                 window.location.href = 'index.html';
             }
@@ -2250,7 +2005,6 @@
                 viewTickets();
                 
             } catch (error) {
-                console.error('Error creating ticket:', error);
                 showDialog('Error', 'Failed to create support ticket. Please try again.');
             }
         });
