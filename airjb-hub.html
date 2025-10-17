@@ -1661,7 +1661,7 @@
                     ticketsList.innerHTML = '<div class="loading-message">No support tickets found</div>';
                 } else {
                     ticketsList.innerHTML = tickets.map(([ticketId, ticket]) => `
-                        <div class="ticket-item" onclick="selectTicket('${ticketId}')">
+                        <div class="ticket-item" onclick="selectTicket('${ticketId}', this)">
                             <div class="ticket-header">
                                 <span class="ticket-id">#${ticketId.slice(-8)}</span>
                                 <span class="ticket-status ${ticket.status || 'open'}">${ticket.status || 'open'}</span>
@@ -1680,11 +1680,16 @@
             }
         }
 
-        async function selectTicket(ticketId) {
+        async function selectTicket(ticketId, clickedElement) {
             // Remove previous selection
             document.querySelectorAll('.ticket-item').forEach(item => item.classList.remove('selected'));
-            // Add selection to clicked item
-            event.target.closest('.ticket-item').classList.add('selected');
+            // Add selection to clicked item if provided
+            if (clickedElement) {
+                const ticketItem = clickedElement.closest('.ticket-item');
+                if (ticketItem) {
+                    ticketItem.classList.add('selected');
+                }
+            }
             
             const ticketDetails = document.getElementById('ticket-details');
             ticketDetails.innerHTML = '<div class="loading-message">Loading ticket details...</div>';
