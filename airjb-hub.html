@@ -965,7 +965,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>AirJB</h1>
-                <span class="tagline">AtyoursTruly v.1.9</span>
+                <span class="tagline">AtyoursTruly v2.0</span>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
@@ -1643,14 +1643,22 @@
             loadSupportTickets();
         }
 
+        // Global variable to track tickets list listener
+        let ticketsListListener = null;
+
         async function loadSupportTickets() {
             const ticketsList = document.getElementById('tickets-list');
             const openTicketsCount = document.getElementById('open-tickets-count');
             const totalTicketsCount = document.getElementById('total-tickets-count');
             
-            try {
-                const ticketsSnapshot = await database.ref('support_tickets').once('value');
-                const ticketsData = ticketsSnapshot.val() || {};
+            // Remove previous listener if exists
+            if (ticketsListListener) {
+                database.ref('support_tickets').off('value', ticketsListListener);
+            }
+            
+            // Set up real-time listener for tickets list
+            ticketsListListener = database.ref('support_tickets').on('value', (snapshot) => {
+                const ticketsData = snapshot.val() || {};
                 const tickets = Object.entries(ticketsData);
                 
                 totalTicketsCount.textContent = tickets.length;
@@ -1675,10 +1683,12 @@
                         </div>
                     `).join('');
                 }
-            } catch (error) {
-                ticketsList.innerHTML = '<div class="loading-message">Error loading tickets</div>';
-            }
+            });
         }
+
+        // Global variable to track current ticket listener
+        let currentTicketListener = null;
+        let currentTicketId = null;
 
         async function selectTicket(ticketId, clickedElement) {
             // Remove previous selection
@@ -1691,13 +1701,18 @@
                 }
             }
             
+            // Remove previous listener if exists
+            if (currentTicketListener && currentTicketId) {
+                database.ref(`support_tickets/${currentTicketId}`).off('value', currentTicketListener);
+            }
+            
+            currentTicketId = ticketId;
             const ticketDetails = document.getElementById('ticket-details');
             ticketDetails.innerHTML = '<div class="loading-message">Loading ticket details...</div>';
             
-            try {
-                // Get the actual ticket data
-                const ticketSnapshot = await database.ref(`support_tickets/${ticketId}`).once('value');
-                const ticketData = ticketSnapshot.val();
+            // Set up real-time listener for this ticket
+            currentTicketListener = database.ref(`support_tickets/${ticketId}`).on('value', (snapshot) => {
+                const ticketData = snapshot.val();
                 
                 if (!ticketData) {
                     ticketDetails.innerHTML = '<div class="loading-message">Ticket not found</div>';
@@ -1786,9 +1801,14 @@
                     </div>
                 `;
                 
-            } catch (error) {
-                ticketDetails.innerHTML = '<div class="loading-message">Error loading ticket details</div>';
-            }
+                // Auto-scroll to bottom of conversation
+                const conversation = ticketDetails.querySelector('.conversation');
+                if (conversation) {
+                    setTimeout(() => {
+                        conversation.scrollTop = conversation.scrollHeight;
+                    }, 100);
+                }
+            });
         }
 
         async function updateTicketStatus(ticketId) {
@@ -1803,11 +1823,8 @@
                     statusUpdatedBy: 'admin'
                 });
                 
-                // Reload the ticket details to show updated status
-                await selectTicket(ticketId);
-                
-                // Refresh the tickets list to show updated status
-                await loadSupportTickets();
+                // Real-time listeners will automatically update everything
+                // No need to manually reload
                 
                 // Show notification with color-coded message
                 const statusMessages = {
@@ -1894,11 +1911,8 @@
                 // Clear the textarea
                 replyTextarea.value = '';
                 
-                // Reload the ticket details to show the new reply
-                await selectTicket(ticketId);
-                
-                // Refresh the tickets list
-                await loadSupportTickets();
+                // Real-time listener will automatically update the conversation
+                // No need to manually reload
                 
                 showNotification('Reply sent successfully!');
                 
@@ -1978,6 +1992,16 @@
         });
 
         document.getElementById('close-support-center').addEventListener('click', () => {
+            // Clean up listeners when closing
+            if (currentTicketListener && currentTicketId) {
+                database.ref(`support_tickets/${currentTicketId}`).off('value', currentTicketListener);
+                currentTicketListener = null;
+                currentTicketId = null;
+            }
+            if (ticketsListListener) {
+                database.ref('support_tickets').off('value', ticketsListListener);
+                ticketsListListener = null;
+            }
             document.getElementById('support-center-modal').style.display = 'none';
         });
 
@@ -2033,6 +2057,18 @@
         // Close modals when clicking outside
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('dialog-overlay')) {
+                // Clean up support center listeners if closing that modal
+                if (e.target.id === 'support-center-modal') {
+                    if (currentTicketListener && currentTicketId) {
+                        database.ref(`support_tickets/${currentTicketId}`).off('value', currentTicketListener);
+                        currentTicketListener = null;
+                        currentTicketId = null;
+                    }
+                    if (ticketsListListener) {
+                        database.ref('support_tickets').off('value', ticketsListListener);
+                        ticketsListListener = null;
+                    }
+                }
                 e.target.style.display = 'none';
             }
         });
