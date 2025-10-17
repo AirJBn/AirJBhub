@@ -706,7 +706,7 @@
         }
 
         .message.user-message {
-            background: rgba(45, 90, 45, 0.1);
+            background: rgba(41, 52, 87, 0.1);
             border-left: 3px solid #2d5a2d;
             margin-left: auto;
             border-radius: 8px 0 8px 8px;
@@ -1786,7 +1786,7 @@
                             ${conversationHtml}
                         </div>
                         <div class="reply-form">
-                            <textarea class="reply-textarea" placeholder="Type your reply here..."></textarea>
+                            <textarea class="reply-textarea" placeholder="Type your reply here... (Press Enter to send, Shift+Enter for new line)" onkeydown="handleReplyKeydown(event, '${ticketId}')"></textarea>
                             <div class="reply-form-actions">
                                 <div class="status-controls">
                                     <select class="status-select" id="ticket-status-${ticketId}" onchange="updateTicketStatus('${ticketId}')">
@@ -1840,6 +1840,15 @@
             } catch (error) {
                 showDialog('Error', 'Failed to update ticket status. Please try again.');
             }
+        }
+
+        function handleReplyKeydown(event, ticketId) {
+            // Check if Enter was pressed without Shift key
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Prevent new line
+                sendReply(ticketId);
+            }
+            // If Shift+Enter, allow default behavior (new line)
         }
 
         async function sendReply(ticketId) {
