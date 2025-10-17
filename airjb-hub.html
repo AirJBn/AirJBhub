@@ -706,7 +706,7 @@
         }
 
         .message.user-message {
-            background: rgba(122, 145, 19, 1);
+            background: rgb(53, 53, 53);
             border-left: 3px solid #2d5a2d;
             margin-left: auto;
             border-radius: 8px 0 8px 8px;
@@ -965,7 +965,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>AirJB</h1>
-                <span class="tagline">AtyoursTruly v2.5</span>
+                <span class="tagline">AtyoursTruly v2.6</span>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
@@ -1307,11 +1307,11 @@
                     document.getElementById('total-downloads').textContent = downloadCount.toLocaleString();
                 } else {
                     // Final fallback - check if there's a manual count set by admin
-                    document.getElementById('total-downloads').textContent = '39';
-                    await database.ref('app_stats/download_count').set(39);
+                    document.getElementById('total-downloads').textContent = '50';
+                    await database.ref('app_stats/download_count').set(50);
                 }
             } catch (error) {
-                document.getElementById('total-downloads').textContent = '39';
+                document.getElementById('total-downloads').textContent = '50';
             }
         }
 
