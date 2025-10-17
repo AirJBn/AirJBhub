@@ -1898,7 +1898,9 @@
                 showNotification('Reply sent successfully!');
                 
             } catch (error) {
-                showDialog('Error', 'Failed to send reply. Please try again.');
+                console.error('Error sending reply:', error);
+                console.error('Error details:', error.message, error.code);
+                showDialog('Error', 'Failed to send reply. Please try again. Error: ' + error.message);
             } finally {
                 replyBtn.disabled = false;
                 replyBtn.textContent = 'Send Reply';
