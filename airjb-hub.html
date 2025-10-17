@@ -577,7 +577,7 @@
         }
 
         .ticket-preview {
-            color: #888888;
+            color: #ffffff;
             font-size: 11px;
             line-height: 1.3;
             margin-bottom: 6px;
@@ -591,7 +591,7 @@
             justify-content: space-between;
             align-items: center;
             font-size: 10px;
-            color: #666666;
+            color: #ffffff;
         }
 
         /* Ticket Details Panel */
@@ -742,7 +742,7 @@
 
         .message-time {
             font-size: 10px;
-            color: #666666;
+            color: #ffffff;
             text-align: right;
         }
 
@@ -1440,7 +1440,27 @@
                 const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
                 let onlineCount = 0;
                 
-                const usersList = users.map(([userId, userData]) => {
+                // Sort users: online first, then offline by most recent lastSeen
+                const sortedUsers = users.sort(([aId, aData], [bId, bData]) => {
+                    const aIsOnline = aData.isOnline && (!aData.lastSeen || new Date(aData.lastSeen) > fiveMinutesAgo);
+                    const bIsOnline = bData.isOnline && (!bData.lastSeen || new Date(bData.lastSeen) > fiveMinutesAgo);
+                    
+                    // If one is online and the other isn't, online comes first
+                    if (aIsOnline && !bIsOnline) return -1;
+                    if (!aIsOnline && bIsOnline) return 1;
+                    
+                    // If both are offline, sort by most recent lastSeen
+                    if (!aIsOnline && !bIsOnline) {
+                        const aLastSeen = aData.lastSeen ? new Date(aData.lastSeen).getTime() : 0;
+                        const bLastSeen = bData.lastSeen ? new Date(bData.lastSeen).getTime() : 0;
+                        return bLastSeen - aLastSeen; // Most recent first
+                    }
+                    
+                    // Both online, keep original order
+                    return 0;
+                });
+                
+                const usersList = sortedUsers.map(([userId, userData]) => {
                     const isOnline = userData.isOnline && (!userData.lastSeen || new Date(userData.lastSeen) > fiveMinutesAgo);
                     if (isOnline) onlineCount++;
                     
@@ -1454,7 +1474,10 @@
                         const diffHours = Math.floor(diffMins / 60);
                         const diffDays = Math.floor(diffHours / 24);
                         
-                        if (diffMins < 1) {
+                        // Check for valid numbers
+                        if (isNaN(diffMins) || diffMs < 0) {
+                            lastSeenText = 'Never';
+                        } else if (diffMins < 1) {
                             lastSeenText = 'Just now';
                         } else if (diffMins < 60) {
                             lastSeenText = `${diffMins}m ago`;
@@ -1516,7 +1539,27 @@
                 if (pilots.length === 0) {
                     userList.innerHTML = '<div class="loading-message">No users found</div>';
                 } else {
-                    userList.innerHTML = pilots.map(([uid, pilot]) => {
+                    // Sort pilots: online first, then offline by most recent lastSeen
+                    const sortedPilots = pilots.sort(([aUid, aPilot], [bUid, bPilot]) => {
+                        const aIsOnline = aPilot.isOnline && (!aPilot.lastSeen || new Date(aPilot.lastSeen) > new Date(Date.now() - 5 * 60 * 1000));
+                        const bIsOnline = bPilot.isOnline && (!bPilot.lastSeen || new Date(bPilot.lastSeen) > new Date(Date.now() - 5 * 60 * 1000));
+                        
+                        // If one is online and the other isn't, online comes first
+                        if (aIsOnline && !bIsOnline) return -1;
+                        if (!aIsOnline && bIsOnline) return 1;
+                        
+                        // If both are offline, sort by most recent lastSeen
+                        if (!aIsOnline && !bIsOnline) {
+                            const aLastSeen = aPilot.lastSeen ? new Date(aPilot.lastSeen).getTime() : 0;
+                            const bLastSeen = bPilot.lastSeen ? new Date(bPilot.lastSeen).getTime() : 0;
+                            return bLastSeen - aLastSeen; // Most recent first
+                        }
+                        
+                        // Both online, keep original order
+                        return 0;
+                    });
+                    
+                    userList.innerHTML = sortedPilots.map(([uid, pilot]) => {
                         const isOnline = pilot.isOnline && (!pilot.lastSeen || new Date(pilot.lastSeen) > new Date(Date.now() - 5 * 60 * 1000));
                         const memberSince = pilot.createdAt ? new Date(pilot.createdAt).toLocaleDateString() : 'Unknown';
                         
@@ -1530,7 +1573,10 @@
                             const diffHours = Math.floor(diffMins / 60);
                             const diffDays = Math.floor(diffHours / 24);
                             
-                            if (diffMins < 1) {
+                            // Check for valid numbers
+                            if (isNaN(diffMins) || diffMs < 0) {
+                                lastSeenText = 'Never';
+                            } else if (diffMins < 1) {
                                 lastSeenText = 'Just now';
                             } else if (diffMins < 60) {
                                 lastSeenText = `${diffMins}m ago`;
