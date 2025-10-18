@@ -1374,34 +1374,59 @@
         }
 
 
-        // Load dashboard data
-        async function loadDashboardData() {
+        // Helper function for smooth number updates with animation
+        function smoothUpdateNumber(elementId, newValue) {
+            const element = document.getElementById(elementId);
+            if (element && element.textContent !== newValue.toString()) {
+                element.style.transition = 'all 0.3s ease';
+                element.style.transform = 'scale(1.15)';
+                element.textContent = newValue;
+                setTimeout(() => {
+                    element.style.transform = 'scale(1)';
+                }, 300);
+            }
+        }
+
+        // Load dashboard data with real-time listeners
+        function loadDashboardData() {
             try {
-                // Load user count
-                const pilotsSnapshot = await database.ref('pilots').once('value');
-                const pilotsData = pilotsSnapshot.val() || {};
-                document.getElementById('total-users').textContent = Object.keys(pilotsData).length;
+                // Real-time listener for pilots
+                database.ref('pilots').on('value', (pilotsSnapshot) => {
+                    const pilotsData = pilotsSnapshot.val() || {};
+                    const totalUsers = Object.keys(pilotsData).length;
+                    
+                    // Smooth update for total users
+                    smoothUpdateNumber('total-users', totalUsers);
+                    
+                    // Count active pilots (online with recent activity)
+                    const now = new Date();
+                    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+                    const activePilots = Object.values(pilotsData).filter(pilot => {
+                        if (!pilot.isOnline) return false;
+                        const lastSeenValue = pilot.lastSeenTimestamp || pilot.lastSeen;
+                        if (!lastSeenValue) return pilot.isOnline;
+                        const lastSeenDate = typeof lastSeenValue === 'number' ? new Date(lastSeenValue) : new Date(lastSeenValue);
+                        return lastSeenDate > fiveMinutesAgo;
+                    }).length;
+                    
+                    // Smooth update for active pilots
+                    smoothUpdateNumber('active-pilots', activePilots);
+                });
                 
-                // Count active pilots (online with recent activity)
-                const now = new Date();
-                const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-                const activePilots = Object.values(pilotsData).filter(pilot => {
-                    if (!pilot.isOnline) return false;
-                    if (!pilot.lastSeen) return pilot.isOnline; // Fallback for old data
-                    return new Date(pilot.lastSeen) > fiveMinutesAgo;
-                }).length;
-                document.getElementById('active-pilots').textContent = activePilots;
+                // Real-time listener for support tickets
+                database.ref('support_tickets').on('value', (ticketsSnapshot) => {
+                    const ticketsData = ticketsSnapshot.val() || {};
+                    const openTickets = Object.values(ticketsData).filter(ticket => ticket.status === 'open').length;
+                    
+                    // Smooth update for tickets
+                    smoothUpdateNumber('support-tickets', openTickets);
+                });
                 
-                // Load support tickets
-                const ticketsSnapshot = await database.ref('support_tickets').once('value');
-                const ticketsData = ticketsSnapshot.val() || {};
-                const openTickets = Object.values(ticketsData).filter(ticket => ticket.status === 'open').length;
-                document.getElementById('support-tickets').textContent = openTickets;
-                
-                // Load download count
+                // Load download count (external API, not real-time)
                 loadDownloadCount();
                 
             } catch (error) {
+                console.error('Error setting up real-time listeners:', error);
                 // Set fallback values
                 document.getElementById('total-users').textContent = '--';
                 document.getElementById('active-pilots').textContent = '--';
@@ -1474,7 +1499,7 @@
             }
         }
 
-        async function loadUsersListInline() {
+        function loadUsersListInline() {
             const container = document.getElementById('users-list-container');
             const totalElement = document.getElementById('users-total');
             const onlineElement = document.getElementById('users-online');
@@ -1482,9 +1507,10 @@
             container.innerHTML = '<div class="loading-message">Loading users...</div>';
             
             try {
-                const usersSnapshot = await database.ref('pilots').once('value');
-                const usersData = usersSnapshot.val() || {};
-                const users = Object.entries(usersData);
+                // Set up real-time listener for users list
+                database.ref('pilots').on('value', (usersSnapshot) => {
+                    const usersData = usersSnapshot.val() || {};
+                    const users = Object.entries(usersData);
                 
                 if (users.length === 0) {
                     container.innerHTML = '<div class="loading-message">No users found</div>';
@@ -1500,8 +1526,14 @@
                 
                 // Sort users: 1) Online, 2) Offline with lastSeen (most recent first), 3) Never
                 const sortedUsers = users.sort(([aId, aData], [bId, bData]) => {
-                    const aIsOnline = aData.isOnline && (!aData.lastSeen || new Date(aData.lastSeen) > fiveMinutesAgo);
-                    const bIsOnline = bData.isOnline && (!bData.lastSeen || new Date(bData.lastSeen) > fiveMinutesAgo);
+                    // Use lastSeenTimestamp first, fall back to lastSeen
+                    const aLastSeenValue = aData.lastSeenTimestamp || aData.lastSeen;
+                    const bLastSeenValue = bData.lastSeenTimestamp || bData.lastSeen;
+                    const aLastSeenDate = aLastSeenValue ? (typeof aLastSeenValue === 'number' ? new Date(aLastSeenValue) : new Date(aLastSeenValue)) : null;
+                    const bLastSeenDate = bLastSeenValue ? (typeof bLastSeenValue === 'number' ? new Date(bLastSeenValue) : new Date(bLastSeenValue)) : null;
+                    
+                    const aIsOnline = aData.isOnline && (!aLastSeenDate || aLastSeenDate > fiveMinutesAgo);
+                    const bIsOnline = bData.isOnline && (!bLastSeenDate || bLastSeenDate > fiveMinutesAgo);
                     
                     // If one is online and the other isn't, online comes first
                     if (aIsOnline && !bIsOnline) return -1;
@@ -1535,18 +1567,15 @@
                 });
                 
                 const usersList = sortedUsers.map(([userId, userData]) => {
-                    const isOnline = userData.isOnline && (!userData.lastSeen || new Date(userData.lastSeen) > fiveMinutesAgo);
-                    if (isOnline) onlineCount++;
-                    
-                    // Format last seen
-                    let lastSeenText = 'Never';
                     // Try to use lastSeenTimestamp first, then fall back to lastSeen
                     const lastSeenValue = userData.lastSeenTimestamp || userData.lastSeen;
                     
+                    // Format last seen
+                    let lastSeenText = 'Never';
+                    let lastSeenDate = null;
+                    
                     if (lastSeenValue) {
                         try {
-                            let lastSeenDate;
-                            
                             // If it's a number (timestamp), use it directly
                             if (typeof lastSeenValue === 'number') {
                                 lastSeenDate = new Date(lastSeenValue);
@@ -1565,8 +1594,8 @@
                                 const diffHours = Math.floor(diffMins / 60);
                                 const diffDays = Math.floor(diffHours / 24);
                                 
-                                // Check for valid numbers
-                                if (isNaN(diffMins) || diffMs < 0) {
+                                // Check for valid numbers - removed the negative check since timestamps can be in future slightly
+                                if (isNaN(diffMins)) {
                                     lastSeenText = 'Never';
                                 } else if (diffMins < 1) {
                                     lastSeenText = 'Just now';
@@ -1583,6 +1612,9 @@
                         }
                     }
                     
+                    const isOnline = userData.isOnline && (!lastSeenDate || lastSeenDate > fiveMinutesAgo);
+                    if (isOnline) onlineCount++;
+                    
                     // Get session duration
                     const sessionDuration = userData.sessionDurationReadable || '0h 0m';
                     
@@ -1595,11 +1627,13 @@
                     `;
                 }).join('');
                 
-                container.innerHTML = usersList;
-                totalElement.textContent = users.length;
-                onlineElement.textContent = onlineCount;
+                    container.innerHTML = usersList;
+                    smoothUpdateNumber('users-total', users.length);
+                    smoothUpdateNumber('users-online', onlineCount);
+                });
                 
             } catch (error) {
+                console.error('Error setting up users list listener:', error);
                 container.innerHTML = '<div class="loading-message">Error loading users</div>';
                 totalElement.textContent = '--';
                 onlineElement.textContent = '--';
@@ -2565,7 +2599,7 @@
                 // Set enabled to true (press)
                 await database.ref('admin_commands/close_app').update({
                     enabled: true,
-                    timestamp: Date.now()
+                    timestamp: new Date().toISOString()
                 });
                 
                 showNotification('Force close command sent! App closing for all users...');
@@ -2574,7 +2608,7 @@
                 setTimeout(async () => {
                     await database.ref('admin_commands/close_app').update({
                         enabled: false,
-                        timestamp: Date.now()
+                        timestamp: new Date().toISOString()
                     });
                     showNotification('Force close command reset.');
                 }, 2000);
