@@ -982,7 +982,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>AirJB</h1>
-                <span class="tagline">AtyoursTruly v2.8</span>
+                <span class="tagline">AtyoursTruly v2.9</span>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
@@ -1088,9 +1088,9 @@
                     <button class="hub-btn" onclick="editAnnouncement()">Edit Message</button>
                 </div>
                 <div id="current-announcement" style="margin-top: 15px; padding: 10px; background: rgba(45, 90, 45, 0.1); border-left: 3px solid #2d5a2d; border-radius: 4px; display: none;">
-                    <div style="color: #888888; font-size: 11px; margin-bottom: 5px;">Current Message:</div>
+                    <div style="color: #ffffff; font-size: 11px; margin-bottom: 5px;">Current Message:</div>
                     <div id="announcement-text" style="color: #ffffff; font-size: 13px;"></div>
-                    <div style="color: #888888; font-size: 11px; margin-top: 5px;">Status: <span id="announcement-status" style="color: #2d5a2d;">Loading...</span></div>
+                    <div style="color: #ffffff; font-size: 11px; margin-top: 5px;">Status: <span id="announcement-status" style="color: #2d5a2d;">Loading...</span></div>
                 </div>
             </div>
 
@@ -1116,7 +1116,7 @@
                     <button class="hub-btn secondary" onclick="editCloseMessage()">Edit Message</button>
                 </div>
                 <div id="close-app-status" style="margin-top: 15px; padding: 10px; background: rgba(139, 0, 0, 0.1); border-left: 3px solid #8b0000; border-radius: 4px; display: none;">
-                    <div style="color: #888888; font-size: 11px; margin-bottom: 5px;">Current Message:</div>
+                    <div style="color: #ffffff; font-size: 11px; margin-bottom: 5px;">Current Message:</div>
                     <div id="close-app-info" style="color: #ffffff; font-size: 13px;"></div>
                 </div>
             </div>
@@ -1126,9 +1126,9 @@
                 <h3>App Updates</h3>
                 <p>View recent app version updates.</p>
                 <div id="app-updates-info" style="margin-top: 15px;">
-                    <div style="color: #888888; font-size: 11px; margin-bottom: 8px;">Total Updates: <span id="total-updates" style="color: #ffffff; font-weight: bold;">--</span></div>
+                    <div style="color: #ffffff; font-size: 11px; margin-bottom: 8px;">Total Updates: <span id="total-updates" style="color: #ffffff; font-weight: bold;">--</span></div>
                     <div style="padding: 10px; background: rgba(0, 194, 255, 0.1); border-left: 3px solid #00c2ff; border-radius: 4px;">
-                        <div style="color: #888888; font-size: 11px; margin-bottom: 5px;">Latest Update:</div>
+                        <div style="color: #ffffff; font-size: 11px; margin-bottom: 5px;">Latest Update:</div>
                         <div id="latest-update-info" style="color: #ffffff; font-size: 13px;">Loading...</div>
                     </div>
                 </div>
@@ -2297,23 +2297,30 @@
             document.getElementById('support-center-modal').style.display = 'none';
         });
 
-        // Support center tab switching
-        document.getElementById('tickets-tab').addEventListener('click', () => {
-            document.getElementById('tickets-tab').classList.add('active');
-            document.getElementById('create-ticket-tab').classList.remove('active');
-            document.getElementById('tickets-content').classList.add('active');
-            document.getElementById('create-ticket-content').classList.remove('active');
-        });
+        // Support center tab switching (only if elements exist)
+        const ticketsTab = document.getElementById('tickets-tab');
+        const createTicketTab = document.getElementById('create-ticket-tab');
+        
+        if (ticketsTab && createTicketTab) {
+            ticketsTab.addEventListener('click', () => {
+                ticketsTab.classList.add('active');
+                createTicketTab.classList.remove('active');
+                document.getElementById('tickets-content').classList.add('active');
+                document.getElementById('create-ticket-content').classList.remove('active');
+            });
 
-        document.getElementById('create-ticket-tab').addEventListener('click', () => {
-            document.getElementById('create-ticket-tab').classList.add('active');
-            document.getElementById('tickets-tab').classList.remove('active');
-            document.getElementById('create-ticket-content').classList.add('active');
-            document.getElementById('tickets-content').classList.remove('active');
-        });
+            createTicketTab.addEventListener('click', () => {
+                createTicketTab.classList.add('active');
+                ticketsTab.classList.remove('active');
+                document.getElementById('create-ticket-content').classList.add('active');
+                document.getElementById('tickets-content').classList.remove('active');
+            });
+        }
 
         // Create ticket form handler
-        document.getElementById('create-ticket-form').addEventListener('submit', async (e) => {
+        const createTicketForm = document.getElementById('create-ticket-form');
+        if (createTicketForm) {
+            createTicketForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const email = document.getElementById('ticket-email').value;
@@ -2338,13 +2345,15 @@
                 document.getElementById('create-ticket-form').reset();
                 
                 // Switch back to tickets tab
-                document.getElementById('tickets-tab').click();
+                const ticketsTab = document.getElementById('tickets-tab');
+                if (ticketsTab) ticketsTab.click();
                 viewTickets();
                 
             } catch (error) {
                 showDialog('Error', 'Failed to create support ticket. Please try again.');
             }
-        });
+            });
+        }
 
         // Close modals when clicking outside
         document.addEventListener('click', (e) => {
@@ -2707,8 +2716,6 @@
                 const data = snapshot.val();
                 const latestUpdateInfo = document.getElementById('latest-update-info');
                 
-                console.log('App updates data:', data);
-                
                 if (!data) {
                     latestUpdateInfo.innerHTML = '<span style="color: #888888;">No updates available</span>';
                     return;
@@ -2724,18 +2731,16 @@
                 const updateKey = updateKeys[0];
                 const update = data[updateKey];
                 
-                console.log('Latest update:', update);
-                
                 // Format the information
                 latestUpdateInfo.innerHTML = `
                     <div style="margin-bottom: 8px;">
-                        <strong style="color: #00c2ff;">Version ${update.version || 'Unknown'}</strong>
-                        ${update.previousVersion ? `<span style="color: #888888;"> (from ${update.previousVersion})</span>` : ''}
+                        <strong style="color: #5cb85c;">Version ${update.version}</strong>
+                        ${update.previousVersion ? `<span style="color: #5cb85c;"> (from ${update.previousVersion})</span>` : ''}
                     </div>
-                    <div style="color: #888888; font-size: 11px; margin-bottom: 4px;">
-                        📅 ${update.date || 'Unknown date'}
+                    <div style="color: #5cb85c; font-size: 11px; margin-bottom: 4px;">
+                        📅 ${update.date}
                     </div>
-                    <div style="color: #888888; font-size: 11px;">
+                    <div style="color: #5cb85c; font-size: 11px;">
                         👤 ${update.userEmail || 'Unknown'}
                     </div>
                 `;
@@ -2743,13 +2748,16 @@
         }
 
         // Load data on page load
-        document.addEventListener('DOMContentLoaded', () => {
+        function initializeDashboard() {
             loadDashboardData();
             loadAnnouncement();
             loadSurveySummary();
             loadCloseAppStatus();
             loadAppUpdates();
-        });
+        }
+
+        // Call initialization immediately
+        initializeDashboard();
 
         // Add CSS animation
         const style = document.createElement('style');
