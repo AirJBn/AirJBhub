@@ -1127,9 +1127,8 @@
                 <p>View recent app version updates.</p>
                 <div id="app-updates-info" style="margin-top: 15px;">
                     <div style="color: #ffffff; font-size: 11px; margin-bottom: 8px;">Total Updates: <span id="total-updates" style="color: #ffffff; font-weight: bold;">--</span></div>
-                    <div style="padding: 10px; background: rgba(0, 194, 255, 0.1); border-left: 3px solid #00c2ff; border-radius: 4px;">
-                        <div style="color: #ffffff; font-size: 11px; margin-bottom: 5px;">Latest Update:</div>
-                        <div id="latest-update-info" style="color: #ffffff; font-size: 13px;">Loading...</div>
+                    <div id="updates-list-container" style="max-height: 300px; overflow-y: auto;">
+                        <div id="updates-list" style="color: #ffffff; font-size: 13px;">Loading...</div>
                     </div>
                 </div>
             </div>
@@ -2711,39 +2710,42 @@
                 document.getElementById('total-updates').textContent = totalUpdates;
             });
 
-            // Load latest update information
-            database.ref('app_updates').orderByChild('timestamp').limitToLast(1).on('value', (snapshot) => {
+            // Load all updates (sorted by timestamp, most recent first)
+            database.ref('app_updates').orderByChild('timestamp').on('value', (snapshot) => {
                 const data = snapshot.val();
-                const latestUpdateInfo = document.getElementById('latest-update-info');
+                const updatesList = document.getElementById('updates-list');
                 
                 if (!data) {
-                    latestUpdateInfo.innerHTML = '<span style="color: #888888;">No updates available</span>';
+                    updatesList.innerHTML = '<span style="color: #888888;">No updates available</span>';
                     return;
                 }
                 
-                // Get the latest update (it's an object with one key)
-                const updateKeys = Object.keys(data);
-                if (updateKeys.length === 0) {
-                    latestUpdateInfo.innerHTML = '<span style="color: #888888;">No updates available</span>';
+                // Convert to array and sort by timestamp (most recent first)
+                const updatesArray = Object.entries(data).map(([key, update]) => ({
+                    key: key,
+                    ...update
+                })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                if (updatesArray.length === 0) {
+                    updatesList.innerHTML = '<span style="color: #888888;">No updates available</span>';
                     return;
                 }
                 
-                const updateKey = updateKeys[0];
-                const update = data[updateKey];
-                
-                // Format the information
-                latestUpdateInfo.innerHTML = `
-                    <div style="margin-bottom: 8px;">
-                        <strong style="color: #5cb85c;">Version ${update.version}</strong>
-                        ${update.previousVersion ? `<span style="color: #5cb85c;"> (from ${update.previousVersion})</span>` : ''}
+                // Format all updates as a list
+                updatesList.innerHTML = updatesArray.map(update => `
+                    <div style="padding: 10px; background: rgba(0, 194, 255, 0.1); border-left: 3px solid #00c2ff; border-radius: 4px; margin-bottom: 10px;">
+                        <div style="margin-bottom: 8px;">
+                            <strong style="color: #5cb85c;">Version ${update.version}</strong>
+                            ${update.previousVersion ? `<span style="color: #5cb85c;"> (from ${update.previousVersion})</span>` : ''}
+                        </div>
+                        <div style="color: #5cb85c; font-size: 11px; margin-bottom: 4px;">
+                            📅 ${update.date}
+                        </div>
+                        <div style="color: #5cb85c; font-size: 11px;">
+                            👤 ${update.userEmail || 'Unknown'}
+                        </div>
                     </div>
-                    <div style="color: #5cb85c; font-size: 11px; margin-bottom: 4px;">
-                        📅 ${update.date}
-                    </div>
-                    <div style="color: #5cb85c; font-size: 11px;">
-                        👤 ${update.userEmail || 'Unknown'}
-                    </div>
-                `;
+                `).join('');
             });
         }
 
