@@ -982,7 +982,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>AirJB</h1>
-                <span class="tagline">AtyoursTruly v2.7</span>
+                <span class="tagline">AtyoursTruly v2.8</span>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
@@ -1118,6 +1118,19 @@
                 <div id="close-app-status" style="margin-top: 15px; padding: 10px; background: rgba(139, 0, 0, 0.1); border-left: 3px solid #8b0000; border-radius: 4px; display: none;">
                     <div style="color: #888888; font-size: 11px; margin-bottom: 5px;">Current Message:</div>
                     <div id="close-app-info" style="color: #ffffff; font-size: 13px;"></div>
+                </div>
+            </div>
+
+            <!-- App Updates -->
+            <div class="hub-card">
+                <h3>App Updates</h3>
+                <p>View recent app version updates.</p>
+                <div id="app-updates-info" style="margin-top: 15px;">
+                    <div style="color: #888888; font-size: 11px; margin-bottom: 8px;">Total Updates: <span id="total-updates" style="color: #ffffff; font-weight: bold;">--</span></div>
+                    <div style="padding: 10px; background: rgba(0, 194, 255, 0.1); border-left: 3px solid #00c2ff; border-radius: 4px;">
+                        <div style="color: #888888; font-size: 11px; margin-bottom: 5px;">Latest Update:</div>
+                        <div id="latest-update-info" style="color: #ffffff; font-size: 13px;">Loading...</div>
+                    </div>
                 </div>
             </div>
 
@@ -1392,22 +1405,22 @@
             try {
                 // Real-time listener for pilots
                 database.ref('pilots').on('value', (pilotsSnapshot) => {
-                    const pilotsData = pilotsSnapshot.val() || {};
+                const pilotsData = pilotsSnapshot.val() || {};
                     const totalUsers = Object.keys(pilotsData).length;
                     
                     // Smooth update for total users
                     smoothUpdateNumber('total-users', totalUsers);
-                    
-                    // Count active pilots (online with recent activity)
-                    const now = new Date();
-                    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-                    const activePilots = Object.values(pilotsData).filter(pilot => {
-                        if (!pilot.isOnline) return false;
+                
+                // Count active pilots (online with recent activity)
+                const now = new Date();
+                const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+                const activePilots = Object.values(pilotsData).filter(pilot => {
+                    if (!pilot.isOnline) return false;
                         const lastSeenValue = pilot.lastSeenTimestamp || pilot.lastSeen;
                         if (!lastSeenValue) return pilot.isOnline;
                         const lastSeenDate = typeof lastSeenValue === 'number' ? new Date(lastSeenValue) : new Date(lastSeenValue);
                         return lastSeenDate > fiveMinutesAgo;
-                    }).length;
+                }).length;
                     
                     // Smooth update for active pilots
                     smoothUpdateNumber('active-pilots', activePilots);
@@ -1415,8 +1428,8 @@
                 
                 // Real-time listener for support tickets
                 database.ref('support_tickets').on('value', (ticketsSnapshot) => {
-                    const ticketsData = ticketsSnapshot.val() || {};
-                    const openTickets = Object.values(ticketsData).filter(ticket => ticket.status === 'open').length;
+                const ticketsData = ticketsSnapshot.val() || {};
+                const openTickets = Object.values(ticketsData).filter(ticket => ticket.status === 'open').length;
                     
                     // Smooth update for tickets
                     smoothUpdateNumber('support-tickets', openTickets);
@@ -1509,8 +1522,8 @@
             try {
                 // Set up real-time listener for users list
                 database.ref('pilots').on('value', (usersSnapshot) => {
-                    const usersData = usersSnapshot.val() || {};
-                    const users = Object.entries(usersData);
+                const usersData = usersSnapshot.val() || {};
+                const users = Object.entries(usersData);
                 
                 if (users.length === 0) {
                     container.innerHTML = '<div class="loading-message">No users found</div>';
@@ -1627,7 +1640,7 @@
                     `;
                 }).join('');
                 
-                    container.innerHTML = usersList;
+                container.innerHTML = usersList;
                     smoothUpdateNumber('users-total', users.length);
                     smoothUpdateNumber('users-online', onlineCount);
                 });
@@ -2159,14 +2172,14 @@
                         
                         if (isPlaceholder) {
                             console.log('Replacing placeholder at index:', i);
-                            // Replace the pending placeholder
+                        // Replace the pending placeholder
                             await database.ref(`${repliesPath}/${i}`).update({
-                                message: replyMessage,
-                                timestamp: new Date().toISOString(),
-                                author: 'Support Team'
-                            });
-                            hasPendingPlaceholder = true;
-                            break;
+                            message: replyMessage,
+                            timestamp: new Date().toISOString(),
+                            author: 'Support Team'
+                        });
+                        hasPendingPlaceholder = true;
+                        break;
                         }
                     }
                 }
@@ -2681,12 +2694,61 @@
             }
         }
 
+        // Load and display app updates
+        function loadAppUpdates() {
+            // Load total updates count
+            database.ref('app_updates_stats/total_updates').on('value', (snapshot) => {
+                const totalUpdates = snapshot.val() || 0;
+                document.getElementById('total-updates').textContent = totalUpdates;
+            });
+
+            // Load latest update information
+            database.ref('app_updates').orderByChild('timestamp').limitToLast(1).on('value', (snapshot) => {
+                const data = snapshot.val();
+                const latestUpdateInfo = document.getElementById('latest-update-info');
+                
+                console.log('App updates data:', data);
+                
+                if (!data) {
+                    latestUpdateInfo.innerHTML = '<span style="color: #888888;">No updates available</span>';
+                    return;
+                }
+                
+                // Get the latest update (it's an object with one key)
+                const updateKeys = Object.keys(data);
+                if (updateKeys.length === 0) {
+                    latestUpdateInfo.innerHTML = '<span style="color: #888888;">No updates available</span>';
+                    return;
+                }
+                
+                const updateKey = updateKeys[0];
+                const update = data[updateKey];
+                
+                console.log('Latest update:', update);
+                
+                // Format the information
+                latestUpdateInfo.innerHTML = `
+                    <div style="margin-bottom: 8px;">
+                        <strong style="color: #00c2ff;">Version ${update.version || 'Unknown'}</strong>
+                        ${update.previousVersion ? `<span style="color: #888888;"> (from ${update.previousVersion})</span>` : ''}
+                    </div>
+                    <div style="color: #888888; font-size: 11px; margin-bottom: 4px;">
+                        📅 ${update.date || 'Unknown date'}
+                    </div>
+                    <div style="color: #888888; font-size: 11px;">
+                        👤 ${update.userEmail || 'Unknown'}
+                    </div>
+                `;
+            });
+        }
+
         // Load data on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboardData();
             loadAnnouncement();
             loadSurveySummary();
             loadCloseAppStatus();
+            loadAppUpdates();
         });
 
         // Add CSS animation
