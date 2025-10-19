@@ -423,6 +423,91 @@
             font-size: 12px;
         }
 
+        .user-search-container {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .user-search-input {
+            flex: 1;
+            padding: 10px 15px;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 6px;
+            color: #ffffff;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .user-search-input:focus {
+            outline: none;
+            border-color: #2d5a2d;
+        }
+
+        .user-search-input::placeholder {
+            color: #666666;
+        }
+
+        .clear-search-btn {
+            padding: 8px 16px;
+            background: #404040;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .clear-search-btn:hover {
+            background: #555555;
+        }
+
+        .user-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .user-email {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .user-uid {
+            color: #888888;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .user-callsign {
+            color: #2d5a2d;
+            font-size: 12px;
+        }
+
+        .delete-user-btn {
+            padding: 6px 12px;
+            background: #8b0000;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .delete-user-btn:hover {
+            background: #a00000;
+        }
+
         .stat-row {
             display: flex;
             justify-content: space-between;
@@ -982,7 +1067,7 @@
         <div class="nav-container">
             <div class="nav-brand">
                 <h1>AirJB</h1>
-                <span class="tagline">AtyoursTruly v2.9</span>
+                <span class="tagline">AtyoursTruly v3.0</span>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link" id="logout-btn">Logout</a>
@@ -1080,6 +1165,15 @@
                 </div>
             </div>
 
+            <!-- Manage Users -->
+            <div class="hub-card" style="max-height: 180px;">
+                <h3>Manage Users</h3>
+                <p>View, search, and manage all registered users.</p>
+                <div class="hub-actions">
+                    <button class="hub-btn" onclick="openManageUsers()">Manage Users</button>
+                </div>
+            </div>
+
             <!-- App Announcements -->
             <div class="hub-card">
                 <h3>App Announcements</h3>
@@ -1163,6 +1257,12 @@
                 </div>
             </div>
             <div class="dialog-content">
+                <!-- Search Bar -->
+                <div class="user-search-container">
+                    <input type="text" id="user-search-input" placeholder="Search by email, callsign, or UID..." class="user-search-input">
+                    <button onclick="clearUserSearch()" class="clear-search-btn" style="display: none;">Clear</button>
+                </div>
+                <!-- User List -->
                 <div class="user-list-container" id="user-list">
                     <div class="loading-message">Loading users...</div>
                 </div>
@@ -1796,6 +1896,152 @@
 
         function exportSessionData() {
             showDialog('Export Session Data', 'Session data export functionality is coming soon!');
+        }
+
+        // Store all users data for search filtering
+        let allUsersData = [];
+
+        async function openManageUsers() {
+            const modal = document.getElementById('user-management-modal');
+            const userList = document.getElementById('user-list');
+            const searchInput = document.getElementById('user-search-input');
+            const modalTotalUsers = document.getElementById('modal-total-users');
+            const modalOnlineUsers = document.getElementById('modal-online-users');
+            
+            modal.style.display = 'flex';
+            userList.innerHTML = '<div class="loading-message">Loading users...</div>';
+            
+            try {
+                const pilotsSnapshot = await database.ref('pilots').once('value');
+                const pilotsData = pilotsSnapshot.val() || {};
+                const pilots = Object.entries(pilotsData);
+                
+                // Store all users data for search
+                allUsersData = pilots;
+                
+                // Count online users
+                const onlineCount = pilots.filter(([uid, pilot]) => pilot.isOnline === true).length;
+                
+                // Update stats
+                modalTotalUsers.textContent = pilots.length;
+                modalOnlineUsers.textContent = onlineCount;
+                
+                if (pilots.length === 0) {
+                    userList.innerHTML = '<div class="loading-message">No users found</div>';
+                } else {
+                    renderUserList(pilots);
+                }
+                
+                // Setup search functionality
+                searchInput.value = '';
+                searchInput.oninput = handleUserSearch;
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                userList.innerHTML = '<div class="loading-message">Error loading users</div>';
+            }
+        }
+
+        function renderUserList(users) {
+            const userList = document.getElementById('user-list');
+            
+            userList.innerHTML = users.map(([uid, pilot]) => {
+                const isOnline = pilot.isOnline === true;
+                const email = pilot.email || 'No email';
+                const callsign = pilot.callsign || 'Unknown';
+                
+                return `
+                    <div class="user-row">
+                        <div class="user-status-dot ${isOnline ? 'online' : 'offline'}"></div>
+                        <div class="user-info">
+                            <div class="user-email">${email}</div>
+                            <div class="user-callsign">Callsign: ${callsign}</div>
+                            <div class="user-uid">UID: ${uid}</div>
+                        </div>
+                        <button class="delete-user-btn" onclick="confirmDeleteUser('${uid}', '${email.replace(/'/g, "\\'")}')">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleUserSearch() {
+            const searchInput = document.getElementById('user-search-input');
+            const clearBtn = document.querySelector('.clear-search-btn');
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            // Show/hide clear button
+            if (searchTerm) {
+                clearBtn.style.display = 'block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+            
+            // Filter users
+            if (searchTerm === '') {
+                renderUserList(allUsersData);
+            } else {
+                const filteredUsers = allUsersData.filter(([uid, pilot]) => {
+                    const email = (pilot.email || '').toLowerCase();
+                    const callsign = (pilot.callsign || '').toLowerCase();
+                    const uidLower = uid.toLowerCase();
+                    
+                    return email.includes(searchTerm) || 
+                           callsign.includes(searchTerm) || 
+                           uidLower.includes(searchTerm);
+                });
+                
+                renderUserList(filteredUsers);
+                
+                // Show message if no results
+                if (filteredUsers.length === 0) {
+                    document.getElementById('user-list').innerHTML = 
+                        '<div class="loading-message">No users found matching your search</div>';
+                }
+            }
+        }
+
+        function clearUserSearch() {
+            const searchInput = document.getElementById('user-search-input');
+            const clearBtn = document.querySelector('.clear-search-btn');
+            
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            renderUserList(allUsersData);
+        }
+
+        async function confirmDeleteUser(uid, email) {
+            const confirmMessage = `Email: ${email}\nUID: ${uid}\n\nThis action cannot be undone!`;
+            
+            const confirmed = await showDialog('Are you sure you want to delete this user?', confirmMessage, true);
+            
+            if (confirmed) {
+                await deleteUser(uid, email);
+            }
+        }
+
+        async function deleteUser(uid, email) {
+            try {
+                // Show loading state
+                showDialog('Deleting User', 'Please wait...');
+                
+                // Delete user from pilots collection
+                await database.ref(`pilots/${uid}`).remove();
+                
+                // Also delete any associated flight data
+                await database.ref(`flight_data/${uid}`).remove();
+                
+                // Show success message
+                showDialog('Success', `User ${email} has been deleted successfully.`);
+                
+                // Reload the user list
+                setTimeout(() => {
+                    openManageUsers();
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                showDialog('Error', `Failed to delete user: ${error.message}`);
+            }
         }
 
         async function viewTickets() {
